@@ -1,0 +1,22 @@
+[
+  {
+    "id": "intro-name",
+    "prompt": "Welcome to Astro. What is your name?",
+    "expectedAnswers": []
+  },
+  {
+    "id": "use-case",
+    "prompt": "What do you want your voice agent to help with today?",
+    "expectedAnswers": []
+  },
+  {
+    "id": "provider-choice",
+    "prompt": "Which provider do you want to connect: ElevenLabs or Gemini?",
+    "expectedAnswers": ["elevenlabs", "eleven labs", "gemini"]
+  },
+  {
+    "id": "deployment",
+    "prompt": "Where is this site and API deployed?",
+    "expectedAnswers": ["netlify"]
+  }
+]
