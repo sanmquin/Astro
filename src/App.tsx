@@ -250,12 +250,14 @@ function App() {
       await speakText(fallbackResponse)
       setStatus(evaluation.isComplete ? 'Script complete.' : 'Used the in-browser fallback because the API was unavailable.')
     } finally {
-      if (evaluation.accepted && !evaluation.isComplete) {
-        setCurrentStepIndex(evaluation.nextStepIndex)
-      }
-
-      if (evaluation.isComplete) {
-        setCurrentStepIndex(script.length - 1)
+      if (evaluation.accepted) {
+        if (evaluation.isComplete) {
+          setCurrentStepIndex(script.length - 1)
+          setIsComplete(true)
+        } else {
+          setCurrentStepIndex(evaluation.nextStepIndex)
+          setIsComplete(false)
+        }
       }
 
       setAnswer('')
