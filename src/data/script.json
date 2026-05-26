@@ -1,0 +1,29 @@
+{
+  "initialStepId": "welcome",
+  "steps": [
+    {
+      "id": "welcome",
+      "prompt": "Hello! I am your AI assistant. To get started, could you please tell me your name?",
+      "requirement": "The user must provide their name.",
+      "nextStepId": "how_are_you"
+    },
+    {
+      "id": "how_are_you",
+      "prompt": "Nice to meet you! How are you feeling today?",
+      "requirement": "The user should describe their current mood or state.",
+      "nextStepId": "favorite_color"
+    },
+    {
+      "id": "favorite_color",
+      "prompt": "That's interesting. What is your favorite color?",
+      "requirement": "The user must name a color.",
+      "nextStepId": "thank_you"
+    },
+    {
+      "id": "thank_you",
+      "prompt": "Thank you for sharing that with me! We have reached the end of our short script. Have a wonderful day!",
+      "requirement": "Any response is acceptable to finish.",
+      "nextStepId": null
+    }
+  ]
+}
