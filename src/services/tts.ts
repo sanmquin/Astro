@@ -2,45 +2,54 @@ import type { AgentSettings } from '../types';
 
 export const speak = async (text: string, settings: AgentSettings): Promise<void> => {
   if (settings.useElevenLabs && settings.elevenLabsApiKey) {
-    try {
-      const response = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${settings.elevenLabsVoiceId}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'xi-api-key': settings.elevenLabsApiKey,
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${settings.elevenLabsVoiceId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'xi-api-key': settings.elevenLabsApiKey,
+        },
+        body: JSON.stringify({
+          text,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.5,
           },
-          body: JSON.stringify({
-            text,
-            model_id: 'eleven_multilingual_v2',
-            voice_settings: {
-              stability: 0.5,
-              similarity_boost: 0.5,
-            },
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Eleven Labs API request failed');
+        }),
       }
+    );
 
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-
-      return new Promise((resolve) => {
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-          resolve();
-        };
-        audio.play();
-      });
-    } catch (error) {
-      console.error('Eleven Labs TTS failed, falling back to Web Speech API', error);
-      return webSpeechSpeak(text);
+    if (!response.ok) {
+      let errorMessage = `Eleven Labs API request failed with status ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail?.message || errorData.message || errorMessage;
+      } catch {
+        // Ignore JSON parse error
+      }
+      throw new Error(errorMessage);
     }
+
+    const audioBlob = await response.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+
+    return new Promise((resolve, reject) => {
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        resolve();
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(audioUrl);
+        reject(new Error('Audio playback failed'));
+      };
+      audio.play().catch(err => {
+        URL.revokeObjectURL(audioUrl);
+        reject(err);
+      });
+    });
   } else {
     return webSpeechSpeak(text);
   }
