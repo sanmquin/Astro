@@ -1,5 +1,25 @@
 import type { AgentSettings } from '../types';
 
+let sharedAudio: HTMLAudioElement | null = null;
+
+const getSharedAudio = (): HTMLAudioElement => {
+  if (!sharedAudio) {
+    sharedAudio = new Audio();
+  }
+  return sharedAudio;
+};
+
+export const primeTTS = async (): Promise<void> => {
+  const audio = getSharedAudio();
+  // Short silent WAV file to unlock audio
+  audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
+  try {
+    await audio.play();
+  } catch (err) {
+    console.warn('Failed to prime TTS:', err);
+  }
+};
+
 export const speak = async (text: string, settings: AgentSettings): Promise<void> => {
   if (settings.useElevenLabs && settings.elevenLabsApiKey) {
     const response = await fetch(
@@ -34,19 +54,32 @@ export const speak = async (text: string, settings: AgentSettings): Promise<void
 
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
+    const audio = getSharedAudio();
+
+    // Stop any current playback
+    audio.pause();
+    audio.src = audioUrl;
 
     return new Promise((resolve, reject) => {
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
+      const onEnded = () => {
+        cleanup();
         resolve();
       };
-      audio.onerror = () => {
-        URL.revokeObjectURL(audioUrl);
+      const onError = () => {
+        cleanup();
         reject(new Error('Audio playback failed'));
       };
-      audio.play().catch(err => {
+      const cleanup = () => {
+        audio.removeEventListener('ended', onEnded);
+        audio.removeEventListener('error', onError);
         URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.addEventListener('ended', onEnded);
+      audio.addEventListener('error', onError);
+
+      audio.play().catch(err => {
+        cleanup();
         reject(err);
       });
     });
@@ -112,17 +145,32 @@ export const testElevenLabs = async (settings: AgentSettings): Promise<void> => 
 
   const audioBlob = await response.blob();
   const audioUrl = URL.createObjectURL(audioBlob);
-  const audio = new Audio(audioUrl);
+  const audio = getSharedAudio();
+
+  audio.pause();
+  audio.src = audioUrl;
 
   return new Promise((resolve, reject) => {
-    audio.onended = () => {
-      URL.revokeObjectURL(audioUrl);
+    const onEnded = () => {
+      cleanup();
       resolve();
     };
-    audio.onerror = () => {
-      URL.revokeObjectURL(audioUrl);
+    const onError = () => {
+      cleanup();
       reject(new Error('Failed to play Eleven Labs audio'));
     };
-    audio.play().catch(reject);
+    const cleanup = () => {
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('error', onError);
+      URL.revokeObjectURL(audioUrl);
+    };
+
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('error', onError);
+
+    audio.play().catch(err => {
+      cleanup();
+      reject(err);
+    });
   });
 };
