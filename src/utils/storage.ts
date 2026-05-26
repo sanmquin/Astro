@@ -4,9 +4,9 @@ const SETTINGS_KEY = 'agent_settings';
 
 const DEFAULT_SETTINGS: AgentSettings = {
   elevenLabsApiKey: '',
-  elevenLabsVoiceId: '21m00Tcm4TlvDq8ikWAM', // Rachel
+  elevenLabsVoiceId: 'pNInz6obpgDQGcFmaJgB',
   geminiApiKey: '',
-  useElevenLabs: false,
+  useElevenLabs: true,
 };
 
 export const loadSettings = (): AgentSettings => {

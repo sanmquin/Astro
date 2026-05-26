@@ -26,6 +26,9 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
     browserSupportsSpeechRecognition
   } = useVoiceAgent(script, settings);
 
+  const currentStepIndex = script.steps.findIndex(s => s.id === (currentStep?.id || script.initialStepId));
+  const progress = isFinished ? 100 : (currentStepIndex / script.steps.length) * 100;
+
   if (!browserSupportsSpeechRecognition) {
     return (
       <div className="p-8 text-center">
@@ -38,18 +41,35 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
 
   return (
     <div className="flex flex-col items-center justify-center space-y-8 p-4 max-w-2xl mx-auto w-full">
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">Voice Agent</h1>
-        <p className="text-gray-500">
-          {isFinished ? 'Conversation completed' : 'Follow the script to complete the task'}
-        </p>
+      <div className="text-center space-y-4 w-full">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Voice Agent</h1>
+          <p className="text-gray-500">
+            {isFinished ? 'Conversation completed' : 'Follow the script to complete the task'}
+          </p>
+        </div>
+
+        {!isFinished && (
+          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+            <div
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-in-out"
+              style={{ width: `${progress}%` }}
+            ></div>
+            <div className="flex justify-between mt-1">
+               <span className="text-xs text-gray-400">Step {currentStepIndex + 1} of {script.steps.length}</span>
+               <span className="text-xs text-gray-400">{Math.round(progress)}% Complete</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className={cn(
         "w-full bg-white rounded-2xl shadow-xl p-8 border-2 transition-all duration-300",
         status === 'listening' ? "border-blue-500 shadow-blue-100" : "border-transparent",
         status === 'speaking' ? "border-green-500 shadow-green-100" : "",
-        status === 'processing' ? "border-purple-500 shadow-purple-100" : ""
+        status === 'processing' ? "border-purple-500 shadow-purple-100" : "",
+        status === 'verifying' ? "border-amber-500 shadow-amber-100" : "",
+        status === 'verified' ? "border-green-600 shadow-green-200" : ""
       )}>
         {isFinished ? (
           <div className="text-center py-12 space-y-4">
@@ -91,6 +111,8 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
                   status === 'speaking' ? "bg-green-500 text-white" : "",
                   status === 'listening' ? "bg-blue-500 text-white" : "",
                   status === 'processing' ? "bg-purple-500 text-white" : "",
+                  status === 'verifying' ? "bg-amber-500 text-white" : "",
+                  status === 'verified' ? "bg-green-600 text-white" : "",
                   status === 'error' ? "bg-red-500 text-white" : ""
                 )}
               >
@@ -98,6 +120,8 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
                 {status === 'speaking' && <MicOff size={32} />}
                 {status === 'listening' && <Mic size={32} />}
                 {status === 'processing' && <Loader2 size={32} className="animate-spin" />}
+                {status === 'verifying' && <Loader2 size={32} className="animate-spin" />}
+                {status === 'verified' && <CheckCircle2 size={32} />}
                 {status === 'error' && <AlertCircle size={32} />}
               </button>
             </div>
@@ -115,7 +139,9 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
                   "w-2 h-2 rounded-full",
                   status === 'speaking' && "bg-green-500 animate-pulse",
                   status === 'listening' && "bg-blue-500 animate-pulse",
-                  status === 'processing' && "bg-purple-500 animate-pulse"
+                  status === 'processing' && "bg-purple-500 animate-pulse",
+                  status === 'verifying' && "bg-amber-500 animate-pulse",
+                  status === 'verified' && "bg-green-600 animate-pulse"
                 )} />
                 <span className="text-sm font-medium text-gray-500 capitalize">
                   {status}...

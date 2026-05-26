@@ -17,4 +17,4 @@ export type AgentSettings = {
   useElevenLabs: boolean;
 }
 
-export type AgentStatus = 'idle' | 'speaking' | 'listening' | 'processing' | 'error';
+export type AgentStatus = 'idle' | 'speaking' | 'listening' | 'processing' | 'verifying' | 'verified' | 'error';

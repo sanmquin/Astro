@@ -35,7 +35,16 @@ export const speak = async (text: string, settings: AgentSettings): Promise<void
           URL.revokeObjectURL(audioUrl);
           resolve();
         };
-        audio.play();
+        audio.onerror = () => {
+          URL.revokeObjectURL(audioUrl);
+          console.error('Audio playback error, falling back to Web Speech API');
+          webSpeechSpeak(text).then(resolve).catch(() => resolve());
+        };
+        audio.play().catch(err => {
+          console.error('Audio play failed, falling back to Web Speech API', err);
+          URL.revokeObjectURL(audioUrl);
+          webSpeechSpeak(text).then(resolve).catch(() => resolve());
+        });
       });
     } catch (error) {
       console.error('Eleven Labs TTS failed, falling back to Web Speech API', error);
