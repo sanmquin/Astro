@@ -2,7 +2,7 @@ import 'regenerator-runtime/runtime';
 import { useState, useEffect, useCallback } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import type { Script, ScriptStep, AgentSettings, AgentStatus } from '../types';
-import { speak } from '../services/tts';
+import { speak, primeTTS } from '../services/tts';
 import { evaluateResponse } from '../services/gemini';
 
 export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
@@ -112,6 +112,9 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   // Initial start
   const startAgent = () => {
+    // Prime TTS on user gesture to unlock audio
+    primeTTS().catch(err => console.warn('Failed to prime TTS:', err));
+
     resetTranscript();
     setCurrentStepId(script.initialStepId);
     const initialStep = script.steps.find(s => s.id === script.initialStepId);
