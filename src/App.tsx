@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import AgentInterface from './components/AgentInterface';
 import Settings from './components/Settings';
+import TestModule from './components/TestModule';
 import { loadSettings } from './utils/storage';
 import type { AgentSettings } from './types';
 import scriptData from './data/script.json';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon, Activity } from 'lucide-react';
 
 function App() {
   const [settings, setSettings] = useState<AgentSettings>(loadSettings());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isTestOpen, setIsTestOpen] = useState(false);
 
   const handleSettingsChange = (newSettings: AgentSettings) => {
     setSettings(newSettings);
@@ -24,13 +26,22 @@ function App() {
           </div>
           VoiceAgent
         </div>
-        <button
-          onClick={() => setIsSettingsOpen(true)}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          title="Settings"
-        >
-          <SettingsIcon size={24} className="text-gray-600" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsTestOpen(true)}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            title="System Tests"
+          >
+            <Activity size={24} className="text-gray-600" />
+          </button>
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            title="Settings"
+          >
+            <SettingsIcon size={24} className="text-gray-600" />
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -48,6 +59,12 @@ function App() {
         <Settings
           onClose={() => setIsSettingsOpen(false)}
           onSettingsChange={handleSettingsChange}
+        />
+      )}
+      {isTestOpen && (
+        <TestModule
+          onClose={() => setIsTestOpen(false)}
+          settings={settings}
         />
       )}
     </div>
