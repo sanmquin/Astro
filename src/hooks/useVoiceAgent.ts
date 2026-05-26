@@ -36,6 +36,9 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         await speak(step.prompt, usedSettings);
       } catch (ttsErr) {
         console.error('TTS failed in processStep, switching to browser', ttsErr);
+        if (usedSettings.useElevenLabs) {
+          window.alert(`Eleven Labs Error: ${ttsErr instanceof Error ? ttsErr.message : String(ttsErr)}`);
+        }
         usedSettings = { ...usedSettings, useElevenLabs: false };
         setSessionSettings(usedSettings);
         await speak(step.prompt, usedSettings);
