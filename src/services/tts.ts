@@ -13,7 +13,7 @@ export const speak = async (text: string, settings: AgentSettings): Promise<void
           },
           body: JSON.stringify({
             text,
-            model_id: 'eleven_monolingual_v1',
+            model_id: 'eleven_multilingual_v2',
             voice_settings: {
               stability: 0.5,
               similarity_boost: 0.5,
@@ -81,7 +81,7 @@ export const testElevenLabs = async (settings: AgentSettings): Promise<void> => 
       },
       body: JSON.stringify({
         text: "This is a test of the Eleven Labs voice agent.",
-        model_id: 'eleven_monolingual_v1',
+        model_id: 'eleven_multilingual_v2',
         voice_settings: {
           stability: 0.5,
           similarity_boost: 0.5,
