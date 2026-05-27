@@ -43,9 +43,9 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
     <div className="flex flex-col items-center justify-center space-y-8 p-4 max-w-2xl mx-auto w-full">
       <div className="text-center space-y-4 w-full">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Voice Agent</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Agente de Voz</h1>
           <p className="text-gray-500">
-            {isFinished ? 'Conversation completed' : 'Follow the script to complete the task'}
+            {isFinished ? 'Conversación completada' : 'Sigue el guion para completar la tarea'}
           </p>
         </div>
 
@@ -56,8 +56,8 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
               style={{ width: `${progress}%` }}
             ></div>
             <div className="flex justify-between mt-1">
-               <span className="text-xs text-gray-400">Step {currentStepIndex + 1} of {script.steps.length}</span>
-               <span className="text-xs text-gray-400">{Math.round(progress)}% Complete</span>
+               <span className="text-xs text-gray-400">Paso {currentStepIndex + 1} de {script.steps.length}</span>
+               <span className="text-xs text-gray-400">{Math.round(progress)}% Completado</span>
             </div>
           </div>
         )}
@@ -74,19 +74,19 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
         {isFinished ? (
           <div className="text-center py-12 space-y-4">
             <CheckCircle2 className="mx-auto text-green-500" size={64} />
-            <h2 className="text-2xl font-bold">All Done!</h2>
+            <h2 className="text-2xl font-bold">¡Todo listo!</h2>
             <button
               onClick={resetAgent}
               className="mt-4 px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors flex items-center gap-2 mx-auto"
             >
-              <RefreshCw size={18} /> Start Over
+              <RefreshCw size={18} /> Empezar de nuevo
             </button>
           </div>
         ) : (
           <div className="space-y-8 text-center">
             <div className="min-h-[100px] flex items-center justify-center">
               {status === 'idle' ? (
-                <p className="text-gray-400 italic">Ready to start?</p>
+                <p className="text-gray-400 italic">¿Listo para empezar?</p>
               ) : (
                 <p className="text-xl font-medium text-gray-800 leading-relaxed">
                   {currentStep?.prompt}
@@ -127,9 +127,9 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
             </div>
 
             <div className="min-h-[60px] p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Transcript</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Transcripción</p>
               <p className="text-gray-600 italic">
-                {transcript || (status === 'listening' ? 'Listening...' : 'Your speech will appear here')}
+                {transcript || (status === 'listening' ? 'Escuchando...' : 'Tu discurso aparecerá aquí')}
               </p>
             </div>
 
@@ -144,7 +144,11 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
                   status === 'verified' && "bg-green-600 animate-pulse"
                 )} />
                 <span className="text-sm font-medium text-gray-500 capitalize">
-                  {status}...
+                  {status === 'speaking' ? 'Hablando' :
+                   status === 'listening' ? 'Escuchando' :
+                   status === 'processing' ? 'Procesando' :
+                   status === 'verifying' ? 'Verificando' :
+                   status === 'verified' ? 'Verificado' : status}...
                 </span>
               </div>
             )}
@@ -162,7 +166,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
               onClick={resetAgent}
               className="mt-2 text-xs font-bold underline uppercase"
             >
-              Reset Agent
+              Reiniciar Agente
             </button>
           </div>
         </div>
@@ -174,7 +178,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
               onClick={resetAgent}
               className="text-gray-400 hover:text-gray-600 text-sm flex items-center gap-1 mx-auto"
             >
-              <RefreshCw size={14} /> Reset
+              <RefreshCw size={14} /> Reiniciar
             </button>
          </div>
       )}
