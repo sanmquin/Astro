@@ -95,6 +95,7 @@ export const webSpeechSpeak = (text: string): Promise<void> => {
       return;
     }
     const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-MX';
     utterance.onend = () => {
       resolve();
     };

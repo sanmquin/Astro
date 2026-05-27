@@ -44,9 +44,15 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         await speak(step.prompt, usedSettings);
       }
 
-      resetTranscript();
-      setStatus('listening');
-      await SpeechRecognition.startListening({ continuous: false, language: 'en-US' });
+      if (step.nextStepId === null) {
+        // Final interaction, do not wait for user input
+        setCurrentStepId('FINISHED');
+        setStatus('idle');
+      } else {
+        resetTranscript();
+        setStatus('listening');
+        await SpeechRecognition.startListening({ continuous: false, language: 'es-MX' });
+      }
     } catch (err) {
       console.error('Error in processStep:', err);
       setError('Failed to play prompt or start listening.');
@@ -59,7 +65,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
     if (!userTranscript.trim()) {
       setStatus('speaking');
-      await speak("I didn't hear anything. Could you please repeat that?", sessionSettings);
+      await speak("No pude escucharte. ¿Podrías repetir eso?", sessionSettings);
       processStep(currentStep, sessionSettings);
       return;
     }
@@ -87,7 +93,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         }
       } else {
         // Repeat the current step, maybe with feedback
-        const feedback = result.feedback || "I didn't quite catch that. Could you please repeat?";
+        const feedback = result.feedback || "No entendí muy bien. ¿Podrías repetir?";
         setStatus('speaking');
         await speak(feedback, sessionSettings);
         processStep(currentStep, sessionSettings);

@@ -16,17 +16,17 @@ export const evaluateResponse = async (
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `
-      You are an AI assistant evaluating a user's response to a specific prompt in a script.
+      Eres un asistente de IA que evalúa la respuesta de un usuario a un mensaje específico en un guion.
 
-      Script Prompt: "${step.prompt}"
-      Requirement: "${step.requirement}"
-      User Transcript: "${transcript}"
+      Mensaje del Guion: "${step.prompt}"
+      Requisito: "${step.requirement}"
+      Transcripción del Usuario: "${transcript}"
 
-      Determine if the user's response satisfies the requirement.
-      Respond ONLY with a JSON object in the following format:
+      Determina si la respuesta del usuario satisface el requisito.
+      Responde ÚNICAMENTE con un objeto JSON en el siguiente formato:
       {
         "success": boolean,
-        "feedback": "A short message to say if they fail (optional)"
+        "feedback": "Un mensaje corto si fallan (opcional)"
       }
     `;
 

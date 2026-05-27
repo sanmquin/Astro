@@ -51,7 +51,7 @@ function App() {
 
       {/* Footer */}
       <footer className="bg-white border-t px-6 py-4 text-center text-gray-400 text-sm">
-        &copy; {new Date().getFullYear()} Voice Agent Interface. Powered by Eleven Labs & Gemini API.
+        &copy; {new Date().getFullYear()} Interfaz de Agente de Voz. Impulsado por Eleven Labs y Gemini API.
       </footer>
 
       {/* Modals */}
