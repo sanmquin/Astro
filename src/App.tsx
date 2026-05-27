@@ -3,17 +3,28 @@ import AgentInterface from './components/AgentInterface';
 import Settings from './components/Settings';
 import TestModule from './components/TestModule';
 import { loadSettings } from './utils/storage';
-import type { AgentSettings } from './types';
-import scriptData from './data/script.json';
-import { Settings as SettingsIcon, Activity } from 'lucide-react';
+import type { AgentSettings, Script } from './types';
+import defaultScript from './data/script.json';
+import conditionalScript from './data/conditional_script.json';
+import { Settings as SettingsIcon, Activity, FileText } from 'lucide-react';
 
 function App() {
   const [settings, setSettings] = useState<AgentSettings>(loadSettings());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTestOpen, setIsTestOpen] = useState(false);
+  const [currentScript, setCurrentScript] = useState<Script>(defaultScript as Script);
 
   const handleSettingsChange = (newSettings: AgentSettings) => {
     setSettings(newSettings);
+  };
+
+  const handleScriptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const scriptId = e.target.value;
+    if (scriptId === 'conditional') {
+      setCurrentScript(conditionalScript as Script);
+    } else {
+      setCurrentScript(defaultScript as Script);
+    }
   };
 
   return (
@@ -26,27 +37,40 @@ function App() {
           </div>
           VoiceAgent
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsTestOpen(true)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            title="System Tests"
-          >
-            <Activity size={24} className="text-gray-600" />
-          </button>
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            title="Settings"
-          >
-            <SettingsIcon size={24} className="text-gray-600" />
-          </button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+            <FileText size={18} className="text-gray-500" />
+            <select
+              onChange={handleScriptChange}
+              className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
+              defaultValue="default"
+            >
+              <option value="default">Guion Estándar</option>
+              <option value="conditional">Guion Condicional</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsTestOpen(true)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="System Tests"
+            >
+              <Activity size={24} className="text-gray-600" />
+            </button>
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="Settings"
+            >
+              <SettingsIcon size={24} className="text-gray-600" />
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center">
-        <AgentInterface script={scriptData} settings={settings} />
+        <AgentInterface key={currentScript.initialStepId} script={currentScript} settings={settings} />
       </main>
 
       {/* Footer */}

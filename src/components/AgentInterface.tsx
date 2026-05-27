@@ -1,7 +1,7 @@
 import React from 'react';
 import { useVoiceAgent } from '../hooks/useVoiceAgent';
 import type { Script, AgentSettings } from '../types';
-import { Mic, MicOff, RefreshCw, Play, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Pause, Square } from 'lucide-react';
+import { Mic, MicOff, RefreshCw, Play, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Pause, Square, ChevronRight } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -26,6 +26,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
     resumeAgent,
     goToPreviousStep,
     finishListening,
+    handleOptionSelection,
     history,
     isFinished,
     browserSupportsSpeechRecognition
@@ -74,7 +75,8 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
         status === 'speaking' ? "border-green-500 shadow-green-100" : "",
         status === 'processing' ? "border-purple-500 shadow-purple-100" : "",
         status === 'verifying' ? "border-amber-500 shadow-amber-100" : "",
-        status === 'verified' ? "border-green-600 shadow-green-200" : ""
+        status === 'verified' ? "border-green-600 shadow-green-200" : "",
+        status === 'awaiting_selection' ? "border-indigo-500 shadow-indigo-100" : ""
       )}>
         {status === 'paused' ? (
           <div className="text-center py-12 space-y-4">
@@ -119,6 +121,24 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
               )}
             </div>
 
+            {status === 'awaiting_selection' && currentStep?.options && (
+              <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Selecciona una opción para continuar:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {currentStep.options.map((option) => (
+                    <button
+                      key={option.nextStepId}
+                      onClick={() => handleOptionSelection(option.nextStepId)}
+                      className="flex items-center justify-between px-6 py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-semibold transition-all border border-indigo-200 group"
+                    >
+                      {option.label}
+                      <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-center gap-8">
               {status !== 'idle' && status !== 'error' && (
                 <button
@@ -150,7 +170,8 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
                     status === 'processing' ? "bg-purple-500 text-white" : "",
                     status === 'verifying' ? "bg-amber-500 text-white" : "",
                     status === 'verified' ? "bg-green-600 text-white" : "",
-                    status === 'error' ? "bg-red-500 text-white" : ""
+                    status === 'error' ? "bg-red-500 text-white" : "",
+                    status === 'awaiting_selection' ? "bg-indigo-500 text-white opacity-50" : ""
                   )}
                 >
                   {status === 'idle' && <Play size={32} fill="currentColor" />}
@@ -160,6 +181,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
                   {status === 'verifying' && <Loader2 size={32} className="animate-spin" />}
                   {status === 'verified' && <CheckCircle2 size={32} />}
                   {status === 'error' && <AlertCircle size={32} />}
+                  {status === 'awaiting_selection' && <ChevronRight size={32} />}
                 </button>
               </div>
 
@@ -199,14 +221,16 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
                   status === 'listening' && "bg-blue-500 animate-pulse",
                   status === 'processing' && "bg-purple-500 animate-pulse",
                   status === 'verifying' && "bg-amber-500 animate-pulse",
-                  status === 'verified' && "bg-green-600 animate-pulse"
+                  status === 'verified' && "bg-green-600 animate-pulse",
+                  status === 'awaiting_selection' && "bg-indigo-500 animate-pulse"
                 )} />
                 <span className="text-sm font-medium text-gray-500 capitalize">
                   {status === 'speaking' ? 'Hablando' :
                    status === 'listening' ? 'Escuchando' :
                    status === 'processing' ? 'Procesando' :
                    status === 'verifying' ? 'Verificando' :
-                   status === 'verified' ? 'Verificado' : status}...
+                   status === 'verified' ? 'Verificado' :
+                   status === 'awaiting_selection' ? 'Esperando selección' : status}...
                 </span>
               </div>
             )}

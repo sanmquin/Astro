@@ -55,7 +55,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       setStatus((prevStatus) => {
         if (prevStatus === 'paused') return 'paused';
 
-        if (step.nextStepId === null) {
+        if (step.nextStepId === null && (!step.options || step.options.length === 0)) {
           // Final interaction, do not wait for user input
           setCurrentStepId('FINISHED');
           return 'idle';
@@ -101,12 +101,17 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
         setHistory(prev => [...prev, currentStep.id]);
 
-        if (currentStep.nextStepId) {
-          const nextStep = script.steps.find(s => s.id === currentStep.nextStepId);
-          setCurrentStepId(currentStep.nextStepId);
+        const nextStepId = result.selectedNextStepId || currentStep.nextStepId;
+
+        if (nextStepId) {
+          const nextStep = script.steps.find(s => s.id === nextStepId);
+          setCurrentStepId(nextStepId);
           if (nextStep) {
             processStep(nextStep, sessionSettings);
           }
+        } else if (currentStep.options && currentStep.options.length > 0) {
+          // No nextStepId but options exist, and Gemini didn't select one
+          setStatus('awaiting_selection');
         } else {
           setCurrentStepId('FINISHED');
           setStatus('idle');
@@ -195,6 +200,14 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     }
   };
 
+  const handleOptionSelection = (nextStepId: string) => {
+    const nextStep = script.steps.find(s => s.id === nextStepId);
+    setCurrentStepId(nextStepId);
+    if (nextStep) {
+      processStep(nextStep, sessionSettings);
+    }
+  };
+
   const finishListening = () => {
     SpeechRecognition.stopListening();
   };
@@ -210,6 +223,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     resumeAgent,
     goToPreviousStep,
     finishListening,
+    handleOptionSelection,
     history,
     isFinished: currentStepId === 'FINISHED',
     browserSupportsSpeechRecognition
