@@ -3,6 +3,13 @@ export type ScriptStep = {
   prompt: string;
   requirement: string;
   nextStepId: string | null;
+  branches?: ScriptBranch[];
+}
+
+export type ScriptBranch = {
+  label: string;
+  requirement: string;
+  steps: ScriptStep[];
 }
 
 export type Script = {
@@ -18,4 +25,4 @@ export type AgentSettings = {
   maxListeningTime: number;
 }
 
-export type AgentStatus = 'idle' | 'speaking' | 'listening' | 'paused' | 'processing' | 'verifying' | 'verified' | 'error';
+export type AgentStatus = 'idle' | 'speaking' | 'listening' | 'paused' | 'processing' | 'verifying' | 'verified' | 'error' | 'awaiting_selection';
