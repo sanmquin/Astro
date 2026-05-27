@@ -1,0 +1,55 @@
+{
+  "initialStepId": "[1] Bienvenida",
+  "steps": [
+    {
+      "id": "[1] Bienvenida",
+      "prompt": "¡Hola! Bienvenido a tu planificador personal. ¿Cómo te sientes hoy para empezar?",
+      "requirement": "El usuario debe describir su estado de ánimo.",
+      "nextStepId": "[2] Elección"
+    },
+    {
+      "id": "[2] Elección",
+      "prompt": "Entendido. ¿Prefieres una 'Planificación Detallada' o un 'Resumen Rápido'?",
+      "requirement": "El usuario debe elegir entre planificación detallada o resumen rápido.",
+      "nextStepId": "[5] Cierre",
+      "branches": [
+        {
+          "label": "Planificación Detallada",
+          "requirement": "El usuario quiere entrar en detalles sobre su día.",
+          "steps": [
+            {
+              "id": "[3a] Tareas Mañana",
+              "prompt": "Perfecto, vamos al detalle. ¿Cuáles son tus 3 tareas principales para la mañana?",
+              "requirement": "El usuario debe listar 3 tareas de la mañana.",
+              "nextStepId": "[4a] Tareas Tarde"
+            },
+            {
+              "id": "[4a] Tareas Tarde",
+              "prompt": "Muy bien. ¿Y qué tienes planeado para la tarde?",
+              "requirement": "El usuario debe describir sus planes de la tarde.",
+              "nextStepId": null
+            }
+          ]
+        },
+        {
+          "label": "Resumen Rápido",
+          "requirement": "El usuario prefiere ir rápido y solo dar un resumen general.",
+          "steps": [
+            {
+              "id": "[3b] Objetivo General",
+              "prompt": "Excelente, seremos breves. ¿Cuál es tu objetivo número uno para hoy?",
+              "requirement": "El usuario debe mencionar su objetivo principal.",
+              "nextStepId": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "[5] Cierre",
+      "prompt": "¡Excelente! Ya tenemos tu plan. ¡Que tengas un día muy productivo!",
+      "requirement": "Finalización de la interacción.",
+      "nextStepId": null
+    }
+  ]
+}

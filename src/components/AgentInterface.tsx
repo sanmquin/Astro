@@ -26,14 +26,15 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
     resumeAgent,
     goToPreviousStep,
     finishListening,
-    handleOptionSelection,
+    handleBranchSelection,
     history,
+    totalSteps,
     isFinished,
     browserSupportsSpeechRecognition
   } = useVoiceAgent(script, settings);
 
-  const currentStepIndex = script.steps.findIndex(s => s.id === (currentStep?.id || script.initialStepId));
-  const progress = isFinished ? 100 : (currentStepIndex / script.steps.length) * 100;
+  const currentStepNumber = history.length + 1;
+  const progress = isFinished ? 100 : ((currentStepNumber - 1) / Math.max(totalSteps, 1)) * 100;
 
   if (!browserSupportsSpeechRecognition) {
     return (
@@ -62,7 +63,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
               style={{ width: `${progress}%` }}
             ></div>
             <div className="flex justify-between mt-1">
-               <span className="text-xs text-gray-400">Paso {currentStepIndex + 1} de {script.steps.length}</span>
+               <span className="text-xs text-gray-400">Paso {currentStepNumber} (estimado)</span>
                <span className="text-xs text-gray-400">{Math.round(progress)}% Completado</span>
             </div>
           </div>
@@ -121,17 +122,17 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
               )}
             </div>
 
-            {status === 'awaiting_selection' && currentStep?.options && (
+            {status === 'awaiting_selection' && currentStep?.branches && (
               <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Selecciona una opción para continuar:</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {currentStep.options.map((option) => (
+                  {currentStep.branches.map((branch, index) => (
                     <button
-                      key={option.nextStepId}
-                      onClick={() => handleOptionSelection(option.nextStepId)}
+                      key={branch.label}
+                      onClick={() => handleBranchSelection(index)}
                       className="flex items-center justify-between px-6 py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-semibold transition-all border border-indigo-200 group"
                     >
-                      {option.label}
+                      {branch.label}
                       <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                     </button>
                   ))}

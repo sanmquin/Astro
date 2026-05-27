@@ -6,6 +6,7 @@ import { loadSettings } from './utils/storage';
 import type { AgentSettings, Script } from './types';
 import defaultScript from './data/script.json';
 import conditionalScript from './data/conditional_script.json';
+import treeScript from './data/tree_script.json';
 import { Settings as SettingsIcon, Activity, FileText } from 'lucide-react';
 
 function App() {
@@ -18,10 +19,15 @@ function App() {
     setSettings(newSettings);
   };
 
+  const [scriptId, setScriptId] = useState('default');
+
   const handleScriptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const scriptId = e.target.value;
-    if (scriptId === 'conditional') {
+    const id = e.target.value;
+    setScriptId(id);
+    if (id === 'conditional') {
       setCurrentScript(conditionalScript as Script);
+    } else if (id === 'tree') {
+      setCurrentScript(treeScript as Script);
     } else {
       setCurrentScript(defaultScript as Script);
     }
@@ -47,6 +53,7 @@ function App() {
             >
               <option value="default">Guion Estándar</option>
               <option value="conditional">Guion Condicional</option>
+              <option value="tree">Guion de Árbol</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
@@ -70,7 +77,7 @@ function App() {
 
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center">
-        <AgentInterface key={currentScript.initialStepId} script={currentScript} settings={settings} />
+        <AgentInterface key={scriptId} script={currentScript} settings={settings} />
       </main>
 
       {/* Footer */}

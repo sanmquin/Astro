@@ -1,11 +1,26 @@
 import 'regenerator-runtime/runtime';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import type { Script, ScriptStep, AgentSettings, AgentStatus } from '../types';
 import { speak, primeTTS, stopSpeaking } from '../services/tts';
 import { evaluateResponse } from '../services/gemini';
 
 export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
+  // Flatten steps for easy lookup by ID
+  const allSteps = useMemo(() => {
+    const steps: ScriptStep[] = [];
+    const addSteps = (s: ScriptStep[]) => {
+      s.forEach(step => {
+        steps.push(step);
+        if (step.branches) {
+          step.branches.forEach(branch => addSteps(branch.steps));
+        }
+      });
+    };
+    addSteps(script.steps);
+    return steps;
+  }, [script]);
+
   const [currentStepId, setCurrentStepId] = useState<string>(script.initialStepId);
   const [status, setStatus] = useState<AgentStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +35,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     browserSupportsSpeechRecognition
   } = useSpeechRecognition();
 
-  const currentStep = script.steps.find(s => s.id === currentStepId);
+  const currentStep = useMemo(() => allSteps.find(s => s.id === currentStepId), [allSteps, currentStepId]);
 
   const [sessionSettings, setSessionSettings] = useState<AgentSettings>(settings);
   const [prevSettings, setPrevSettings] = useState<AgentSettings>(settings);
@@ -30,6 +45,32 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     setPrevSettings(settings);
     setSessionSettings(settings);
   }
+
+  const getNextStepId = useCallback((step: ScriptStep): string | null => {
+    if (step.nextStepId) return step.nextStepId;
+
+    // If no nextStepId, we might be at the end of a branch
+    // Find if this step is inside a branch
+    const findParent = (steps: ScriptStep[]): ScriptStep | null => {
+      for (const s of steps) {
+        if (s.branches) {
+          for (const branch of s.branches) {
+            if (branch.steps.some(bs => bs.id === step.id)) return s;
+            const nestedParent = findParent(branch.steps);
+            if (nestedParent) return nestedParent;
+          }
+        }
+      }
+      return null;
+    };
+
+    const parent = findParent(script.steps);
+    if (parent && parent.nextStepId) {
+      return parent.nextStepId;
+    }
+
+    return null;
+  }, [script.steps]);
 
   const processStep = useCallback(async (step: ScriptStep, currentSessionSettings: AgentSettings) => {
     try {
@@ -55,7 +96,8 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       setStatus((prevStatus) => {
         if (prevStatus === 'paused') return 'paused';
 
-        if (step.nextStepId === null && (!step.options || step.options.length === 0)) {
+        const nextId = getNextStepId(step);
+        if (nextId === null && (!step.branches || step.branches.length === 0)) {
           // Final interaction, do not wait for user input
           setCurrentStepId('FINISHED');
           return 'idle';
@@ -76,7 +118,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       setError('Failed to play prompt or start listening.');
       setStatus('error');
     }
-  }, [resetTranscript]);
+  }, [resetTranscript, getNextStepId]);
 
   const handleUserResponse = useCallback(async (userTranscript: string) => {
     if (!currentStep || status !== 'listening') return;
@@ -101,17 +143,25 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
         setHistory(prev => [...prev, currentStep.id]);
 
-        const nextStepId = result.selectedNextStepId || currentStep.nextStepId;
+        let nextStepId: string | null = null;
+
+        if (currentStep.branches && currentStep.branches.length > 0) {
+          if (result.selectedBranchIndex !== undefined && currentStep.branches[result.selectedBranchIndex]) {
+            nextStepId = currentStep.branches[result.selectedBranchIndex].steps[0].id;
+          } else {
+            setStatus('awaiting_selection');
+            return;
+          }
+        } else {
+          nextStepId = getNextStepId(currentStep);
+        }
 
         if (nextStepId) {
-          const nextStep = script.steps.find(s => s.id === nextStepId);
+          const nextStep = allSteps.find(s => s.id === nextStepId);
           setCurrentStepId(nextStepId);
           if (nextStep) {
             processStep(nextStep, sessionSettings);
           }
-        } else if (currentStep.options && currentStep.options.length > 0) {
-          // No nextStepId but options exist, and Gemini didn't select one
-          setStatus('awaiting_selection');
         } else {
           setCurrentStepId('FINISHED');
           setStatus('idle');
@@ -128,7 +178,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       setError('Failed to process your response.');
       setStatus('error');
     }
-  }, [currentStep, sessionSettings, status, processStep, script.steps]);
+  }, [currentStep, sessionSettings, status, processStep, allSteps, getNextStepId]);
 
   // Effect to advance when listening stops
   useEffect(() => {
@@ -154,7 +204,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     resetTranscript();
     setHistory([]);
     setCurrentStepId(script.initialStepId);
-    const initialStep = script.steps.find(s => s.id === script.initialStepId);
+    const initialStep = allSteps.find(s => s.id === script.initialStepId);
     if (initialStep) {
       processStep(initialStep, sessionSettings);
     }
@@ -192,7 +242,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       setHistory(newHistory);
       if (prevStepId) {
         setCurrentStepId(prevStepId);
-        const prevStep = script.steps.find(s => s.id === prevStepId);
+        const prevStep = allSteps.find(s => s.id === prevStepId);
         if (prevStep) {
           processStep(prevStep, sessionSettings);
         }
@@ -200,11 +250,15 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     }
   };
 
-  const handleOptionSelection = (nextStepId: string) => {
-    const nextStep = script.steps.find(s => s.id === nextStepId);
-    setCurrentStepId(nextStepId);
-    if (nextStep) {
-      processStep(nextStep, sessionSettings);
+  const handleBranchSelection = (branchIndex: number) => {
+    if (currentStep && currentStep.branches) {
+      setHistory(prev => [...prev, currentStep.id]);
+      const nextStepId = currentStep.branches[branchIndex].steps[0].id;
+      const nextStep = allSteps.find(s => s.id === nextStepId);
+      setCurrentStepId(nextStepId);
+      if (nextStep) {
+        processStep(nextStep, sessionSettings);
+      }
     }
   };
 
@@ -223,8 +277,9 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     resumeAgent,
     goToPreviousStep,
     finishListening,
-    handleOptionSelection,
+    handleBranchSelection,
     history,
+    totalSteps: allSteps.length,
     isFinished: currentStepId === 'FINISHED',
     browserSupportsSpeechRecognition
   };

@@ -1,14 +1,15 @@
-export type ScriptOption = {
-  label: string;
-  nextStepId: string;
-}
-
 export type ScriptStep = {
   id: string;
   prompt: string;
   requirement: string;
   nextStepId: string | null;
-  options?: ScriptOption[];
+  branches?: ScriptBranch[];
+}
+
+export type ScriptBranch = {
+  label: string;
+  requirement: string;
+  steps: ScriptStep[];
 }
 
 export type Script = {
