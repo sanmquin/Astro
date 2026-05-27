@@ -15,6 +15,7 @@ export type AgentSettings = {
   elevenLabsVoiceId: string;
   geminiApiKey: string;
   useElevenLabs: boolean;
+  maxListeningTime: number;
 }
 
-export type AgentStatus = 'idle' | 'speaking' | 'listening' | 'processing' | 'verifying' | 'verified' | 'error';
+export type AgentStatus = 'idle' | 'speaking' | 'listening' | 'paused' | 'processing' | 'verifying' | 'verified' | 'error';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useVoiceAgent } from '../hooks/useVoiceAgent';
 import type { Script, AgentSettings } from '../types';
-import { Mic, MicOff, RefreshCw, Play, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Mic, MicOff, RefreshCw, Play, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Pause, Square } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -22,6 +22,11 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
     error,
     startAgent,
     resetAgent,
+    pauseAgent,
+    resumeAgent,
+    goToPreviousStep,
+    finishListening,
+    history,
     isFinished,
     browserSupportsSpeechRecognition
   } = useVoiceAgent(script, settings);
@@ -71,7 +76,27 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
         status === 'verifying' ? "border-amber-500 shadow-amber-100" : "",
         status === 'verified' ? "border-green-600 shadow-green-200" : ""
       )}>
-        {isFinished ? (
+        {status === 'paused' ? (
+          <div className="text-center py-12 space-y-4">
+            <Pause className="mx-auto text-amber-500" size={64} />
+            <h2 className="text-2xl font-bold">Pausado</h2>
+            <p className="text-gray-500">La conversación está en pausa.</p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={resumeAgent}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors flex items-center gap-2"
+              >
+                <Play size={18} fill="currentColor" /> Continuar
+              </button>
+              <button
+                onClick={resetAgent}
+                className="px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors flex items-center gap-2"
+              >
+                <RefreshCw size={18} /> Reiniciar
+              </button>
+            </div>
+          </div>
+        ) : isFinished ? (
           <div className="text-center py-12 space-y-4">
             <CheckCircle2 className="mx-auto text-green-500" size={64} />
             <h2 className="text-2xl font-bold">¡Todo listo!</h2>
@@ -94,37 +119,70 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
               )}
             </div>
 
-            <div className="relative h-24 flex items-center justify-center">
-              {status === 'listening' && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="animate-ping absolute h-20 w-20 rounded-full bg-blue-400 opacity-20"></div>
-                  <div className="animate-ping absolute h-16 w-16 rounded-full bg-blue-400 opacity-40" style={{ animationDelay: '0.2s' }}></div>
-                </div>
+            <div className="flex items-center justify-center gap-8">
+              {status !== 'idle' && status !== 'error' && (
+                <button
+                  onClick={goToPreviousStep}
+                  disabled={history.length === 0 || status === 'processing' || status === 'verifying' || status === 'verified'}
+                  className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Atrás"
+                >
+                  <ArrowLeft size={24} />
+                </button>
               )}
 
-              <button
-                disabled={status !== 'idle' && status !== 'error'}
-                onClick={startAgent}
-                className={cn(
-                  "relative z-10 w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300",
-                  status === 'idle' ? "bg-blue-600 hover:bg-blue-700 text-white" : "",
-                  status === 'speaking' ? "bg-green-500 text-white" : "",
-                  status === 'listening' ? "bg-blue-500 text-white" : "",
-                  status === 'processing' ? "bg-purple-500 text-white" : "",
-                  status === 'verifying' ? "bg-amber-500 text-white" : "",
-                  status === 'verified' ? "bg-green-600 text-white" : "",
-                  status === 'error' ? "bg-red-500 text-white" : ""
+              <div className="relative h-24 w-24 flex items-center justify-center">
+                {status === 'listening' && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="animate-ping absolute h-20 w-20 rounded-full bg-blue-400 opacity-20"></div>
+                    <div className="animate-ping absolute h-16 w-16 rounded-full bg-blue-400 opacity-40" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
                 )}
-              >
-                {status === 'idle' && <Play size={32} fill="currentColor" />}
-                {status === 'speaking' && <MicOff size={32} />}
-                {status === 'listening' && <Mic size={32} />}
-                {status === 'processing' && <Loader2 size={32} className="animate-spin" />}
-                {status === 'verifying' && <Loader2 size={32} className="animate-spin" />}
-                {status === 'verified' && <CheckCircle2 size={32} />}
-                {status === 'error' && <AlertCircle size={32} />}
-              </button>
+
+                <button
+                  disabled={status !== 'idle' && status !== 'error'}
+                  onClick={startAgent}
+                  className={cn(
+                    "relative z-10 w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300",
+                    status === 'idle' ? "bg-blue-600 hover:bg-blue-700 text-white" : "",
+                    status === 'speaking' ? "bg-green-500 text-white" : "",
+                    status === 'listening' ? "bg-blue-500 text-white" : "",
+                    status === 'processing' ? "bg-purple-500 text-white" : "",
+                    status === 'verifying' ? "bg-amber-500 text-white" : "",
+                    status === 'verified' ? "bg-green-600 text-white" : "",
+                    status === 'error' ? "bg-red-500 text-white" : ""
+                  )}
+                >
+                  {status === 'idle' && <Play size={32} fill="currentColor" />}
+                  {status === 'speaking' && <MicOff size={32} />}
+                  {status === 'listening' && <Mic size={32} />}
+                  {status === 'processing' && <Loader2 size={32} className="animate-spin" />}
+                  {status === 'verifying' && <Loader2 size={32} className="animate-spin" />}
+                  {status === 'verified' && <CheckCircle2 size={32} />}
+                  {status === 'error' && <AlertCircle size={32} />}
+                </button>
+              </div>
+
+              {status !== 'idle' && status !== 'error' && (
+                <button
+                  onClick={pauseAgent}
+                  disabled={status === 'processing' || status === 'verifying' || status === 'verified'}
+                  className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Pausar"
+                >
+                  <Pause size={24} />
+                </button>
+              )}
             </div>
+
+            {status === 'listening' && (
+              <button
+                onClick={finishListening}
+                className="mx-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors flex items-center gap-2"
+              >
+                <Square size={16} fill="currentColor" /> Terminar de hablar
+              </button>
+            )}
 
             <div className="min-h-[60px] p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Transcripción</p>

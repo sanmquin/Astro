@@ -7,6 +7,7 @@ const DEFAULT_SETTINGS: AgentSettings = {
   elevenLabsVoiceId: 'IKne3meq5aSn9XLyUdCD',
   geminiApiKey: '',
   useElevenLabs: false,
+  maxListeningTime: 120, // 2 minutes default
 };
 
 export const loadSettings = (): AgentSettings => {

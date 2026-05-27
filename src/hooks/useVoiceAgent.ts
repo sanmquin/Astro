@@ -1,14 +1,17 @@
 import 'regenerator-runtime/runtime';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import type { Script, ScriptStep, AgentSettings, AgentStatus } from '../types';
-import { speak, primeTTS } from '../services/tts';
+import { speak, primeTTS, stopSpeaking } from '../services/tts';
 import { evaluateResponse } from '../services/gemini';
 
 export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
   const [currentStepId, setCurrentStepId] = useState<string>(script.initialStepId);
   const [status, setStatus] = useState<AgentStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<string[]>([]);
+
+  const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     transcript,
@@ -30,6 +33,10 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   const processStep = useCallback(async (step: ScriptStep, currentSessionSettings: AgentSettings) => {
     try {
+      if (listeningTimeoutRef.current) {
+        clearTimeout(listeningTimeoutRef.current);
+      }
+
       setStatus('speaking');
       let usedSettings = currentSessionSettings;
       try {
@@ -44,15 +51,26 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         await speak(step.prompt, usedSettings);
       }
 
-      if (step.nextStepId === null) {
-        // Final interaction, do not wait for user input
-        setCurrentStepId('FINISHED');
-        setStatus('idle');
-      } else {
-        resetTranscript();
-        setStatus('listening');
-        await SpeechRecognition.startListening({ continuous: false, language: 'es-MX' });
-      }
+      // Check status again as it might have been paused during speaking
+      setStatus((prevStatus) => {
+        if (prevStatus === 'paused') return 'paused';
+
+        if (step.nextStepId === null) {
+          // Final interaction, do not wait for user input
+          setCurrentStepId('FINISHED');
+          return 'idle';
+        } else {
+          resetTranscript();
+          SpeechRecognition.startListening({ continuous: true, language: 'es-MX' });
+
+          // Set safety timeout for listening
+          listeningTimeoutRef.current = setTimeout(() => {
+            SpeechRecognition.stopListening();
+          }, currentSessionSettings.maxListeningTime * 1000);
+
+          return 'listening';
+        }
+      });
     } catch (err) {
       console.error('Error in processStep:', err);
       setError('Failed to play prompt or start listening.');
@@ -81,6 +99,8 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         setStatus('verified');
         await new Promise(resolve => setTimeout(resolve, 1000));
 
+        setHistory(prev => [...prev, currentStep.id]);
+
         if (currentStep.nextStepId) {
           const nextStep = script.steps.find(s => s.id === currentStep.nextStepId);
           setCurrentStepId(currentStep.nextStepId);
@@ -108,6 +128,11 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
   // Effect to advance when listening stops
   useEffect(() => {
     if (!listening && status === 'listening') {
+      // Clear safety timeout if listening stopped manually or via timeout
+      if (listeningTimeoutRef.current) {
+        clearTimeout(listeningTimeoutRef.current);
+      }
+
       // Small delay to ensure transcript is fully captured
       const timeoutId = setTimeout(() => {
         handleUserResponse(transcript);
@@ -122,6 +147,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     primeTTS().catch(err => console.warn('Failed to prime TTS:', err));
 
     resetTranscript();
+    setHistory([]);
     setCurrentStepId(script.initialStepId);
     const initialStep = script.steps.find(s => s.id === script.initialStepId);
     if (initialStep) {
@@ -133,7 +159,44 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     setCurrentStepId(script.initialStepId);
     setStatus('idle');
     setError(null);
+    setHistory([]);
     resetTranscript();
+    stopSpeaking();
+    SpeechRecognition.stopListening();
+  };
+
+  const pauseAgent = () => {
+    setStatus('paused');
+    stopSpeaking();
+    SpeechRecognition.stopListening();
+    if (listeningTimeoutRef.current) {
+      clearTimeout(listeningTimeoutRef.current);
+    }
+  };
+
+  const resumeAgent = () => {
+    if (currentStep) {
+      processStep(currentStep, sessionSettings);
+    }
+  };
+
+  const goToPreviousStep = () => {
+    if (history.length > 0) {
+      const newHistory = [...history];
+      const prevStepId = newHistory.pop();
+      setHistory(newHistory);
+      if (prevStepId) {
+        setCurrentStepId(prevStepId);
+        const prevStep = script.steps.find(s => s.id === prevStepId);
+        if (prevStep) {
+          processStep(prevStep, sessionSettings);
+        }
+      }
+    }
+  };
+
+  const finishListening = () => {
+    SpeechRecognition.stopListening();
   };
 
   return {
@@ -143,6 +206,11 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     error,
     startAgent,
     resetAgent,
+    pauseAgent,
+    resumeAgent,
+    goToPreviousStep,
+    finishListening,
+    history,
     isFinished: currentStepId === 'FINISHED',
     browserSupportsSpeechRecognition
   };
