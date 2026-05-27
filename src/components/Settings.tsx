@@ -55,6 +55,22 @@ const Settings: React.FC<SettingsProps> = ({ onClose, onSettingsChange }) => {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Max Listening Time (seconds)
+            </label>
+            <input
+              type="number"
+              name="maxListeningTime"
+              value={settings.maxListeningTime}
+              onChange={handleChange}
+              className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+              placeholder="120"
+              min="10"
+              max="600"
+            />
+          </div>
+
           <div className="pt-4 border-t">
             <div className="flex items-center mb-4">
               <input

@@ -88,19 +88,38 @@ export const speak = async (text: string, settings: AgentSettings): Promise<void
   }
 };
 
+export const stopSpeaking = (): void => {
+  // Stop Eleven Labs
+  if (sharedAudio) {
+    sharedAudio.pause();
+    sharedAudio.src = "";
+  }
+  // Stop Web Speech
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+};
+
 export const webSpeechSpeak = (text: string): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (!window.speechSynthesis) {
       reject(new Error('Web Speech API not supported in this browser'));
       return;
     }
+    // Cancel any ongoing speech before starting new one
+    window.speechSynthesis.cancel();
+
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'es-MX';
     utterance.onend = () => {
       resolve();
     };
     utterance.onerror = (event) => {
-      reject(new Error(`Web Speech API error: ${event.error}`));
+      if (event.error === 'interrupted') {
+        resolve(); // Treat interruption as normal completion for flow control
+      } else {
+        reject(new Error(`Web Speech API error: ${event.error}`));
+      }
     };
     window.speechSynthesis.speak(utterance);
   });
