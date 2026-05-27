@@ -44,9 +44,15 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         await speak(step.prompt, usedSettings);
       }
 
-      resetTranscript();
-      setStatus('listening');
-      await SpeechRecognition.startListening({ continuous: false, language: 'en-US' });
+      if (step.nextStepId === null) {
+        // Final interaction, do not wait for user input
+        setCurrentStepId('FINISHED');
+        setStatus('idle');
+      } else {
+        resetTranscript();
+        setStatus('listening');
+        await SpeechRecognition.startListening({ continuous: false, language: 'es-MX' });
+      }
     } catch (err) {
       console.error('Error in processStep:', err);
       setError('Failed to play prompt or start listening.');

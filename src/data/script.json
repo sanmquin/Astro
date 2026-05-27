@@ -1,28 +1,46 @@
 {
-  "initialStepId": "welcome",
+  "initialStepId": "[1] Intro",
   "steps": [
     {
-      "id": "welcome",
-      "prompt": "Hello! I am your AI assistant. To get started, could you please tell me your name?",
-      "requirement": "The user must provide their name.",
-      "nextStepId": "how_are_you"
+      "id": "[1] Intro",
+      "prompt": "Hola mi nombre es Astro, mi misión es guiarte en base a tu carta astral. Cuéntame, ¿cómo te describirías?",
+      "requirement": "El usuario debe proporcionar una descripción personal.",
+      "nextStepId": "[2] Objetivo"
     },
     {
-      "id": "how_are_you",
-      "prompt": "Nice to meet you! How are you feeling today?",
-      "requirement": "The user should describe their current mood or state.",
-      "nextStepId": "favorite_color"
+      "id": "[2] Objetivo",
+      "prompt": "Mucho gusto! ¿Cuál es tu objetivo para este curso? ¿Qué te gustaría lograr?",
+      "requirement": "El usuario debe explicar su objetivo para el curso.",
+      "nextStepId": "[3] Tienes pareja"
     },
     {
-      "id": "favorite_color",
-      "prompt": "That's interesting. What is your favorite color?",
-      "requirement": "The user must name a color.",
-      "nextStepId": "thank_you"
+      "id": "[3] Tienes pareja",
+      "prompt": "¡Genial! ¿Y cuál es tu situación actual de pareja?",
+      "requirement": "El usuario debe indicar su situación de pareja.",
+      "nextStepId": "[4] Actualidad"
     },
     {
-      "id": "thank_you",
-      "prompt": "Thank you for sharing that with me! We have reached the end of our short script. Have a wonderful day!",
-      "requirement": "Any response is acceptable to finish.",
+      "id": "[4] Actualidad",
+      "prompt": "Okay, cuéntame más, ¿Cómo es tu relación actualmente?",
+      "requirement": "El usuario debe describir su relación actual.",
+      "nextStepId": "[5] Mayor problema"
+    },
+    {
+      "id": "[5] Mayor problema",
+      "prompt": "Bien. Vamos a profundizar. ¿Cuál consideras que es tu mayor problema en la relación actualmente?",
+      "requirement": "El usuario debe identificar el problema principal.",
+      "nextStepId": "[6] Introspección"
+    },
+    {
+      "id": "[6] Introspección",
+      "prompt": "Entendido. Es momento de empezar a trabajar con tu carta. ¿De que forma crees que estás contribuyendo al problema?",
+      "requirement": "El usuario debe reflexionar sobre su contribución al problema.",
+      "nextStepId": "[7] Casa VII"
+    },
+    {
+      "id": "[7] Casa VII",
+      "prompt": "Gracias por la información. Te invito a que leas la siguiente lectura sobre tu casa VII para seguir platicando.",
+      "requirement": "Finalización de la interacción.",
       "nextStepId": null
     }
   ]
