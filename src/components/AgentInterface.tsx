@@ -12,9 +12,10 @@ function cn(...inputs: ClassValue[]) {
 interface AgentInterfaceProps {
   script: Script;
   settings: AgentSettings;
+  onFinish?: () => void;
 }
 
-const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => {
+const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFinish }) => {
   const {
     currentStep,
     status,
@@ -32,6 +33,12 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings }) => 
     isFinished,
     browserSupportsSpeechRecognition
   } = useVoiceAgent(script, settings);
+
+  React.useEffect(() => {
+    if (isFinished && onFinish) {
+      onFinish();
+    }
+  }, [isFinished, onFinish]);
 
   const currentStepNumber = history.length + 1;
   const progress = isFinished ? 100 : ((currentStepNumber - 1) / Math.max(totalSteps, 1)) * 100;
