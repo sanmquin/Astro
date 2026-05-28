@@ -4,32 +4,30 @@ import Settings from './components/Settings';
 import TestModule from './components/TestModule';
 import { loadSettings } from './utils/storage';
 import type { AgentSettings, Script } from './types';
-import defaultScript from './data/script.json';
-import conditionalScript from './data/conditional_script.json';
-import treeScript from './data/tree_script.json';
+import astroIntro from './data/astro_intro.json';
+import astroReflexion from './data/astro_reflexion.json';
 import { Settings as SettingsIcon, Activity, FileText } from 'lucide-react';
 
 function App() {
   const [settings, setSettings] = useState<AgentSettings>(loadSettings());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTestOpen, setIsTestOpen] = useState(false);
-  const [currentScript, setCurrentScript] = useState<Script>(defaultScript as Script);
+  const [currentScript, setCurrentScript] = useState<Script>(astroIntro as Script);
+  const [introCompleted, setIntroCompleted] = useState(false);
 
   const handleSettingsChange = (newSettings: AgentSettings) => {
     setSettings(newSettings);
   };
 
-  const [scriptId, setScriptId] = useState('default');
+  const [scriptId, setScriptId] = useState('intro');
 
   const handleScriptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value;
     setScriptId(id);
-    if (id === 'conditional') {
-      setCurrentScript(conditionalScript as Script);
-    } else if (id === 'tree') {
-      setCurrentScript(treeScript as Script);
+    if (id === 'reflexion') {
+      setCurrentScript(astroReflexion as Script);
     } else {
-      setCurrentScript(defaultScript as Script);
+      setCurrentScript(astroIntro as Script);
     }
   };
 
@@ -37,23 +35,22 @@ function App() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2 font-bold text-xl text-blue-600">
+        <div className="hidden sm:flex items-center gap-2 font-bold text-xl text-blue-600">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
             V
           </div>
           VoiceAgent
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
           <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
             <FileText size={18} className="text-gray-500" />
             <select
               onChange={handleScriptChange}
               className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
-              defaultValue="default"
+              value={scriptId}
             >
-              <option value="default">Guion Estándar</option>
-              <option value="conditional">Guion Condicional</option>
-              <option value="tree">Guion de Árbol</option>
+              <option value="intro">Astro: Introducción</option>
+              <option value="reflexion" disabled={!introCompleted}>Astro: Reflexión</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
@@ -77,7 +74,16 @@ function App() {
 
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center">
-        <AgentInterface key={scriptId} script={currentScript} settings={settings} />
+        <AgentInterface
+          key={scriptId}
+          script={currentScript}
+          settings={settings}
+          onFinish={() => {
+            if (scriptId === 'intro') {
+              setIntroCompleted(true);
+            }
+          }}
+        />
       </main>
 
       {/* Footer */}
