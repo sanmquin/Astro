@@ -30,6 +30,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSpokenPromptRef = useRef<string | null>(null);
+  const isProcessingRef = useRef(false);
 
   const {
     transcript,
@@ -81,6 +82,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         clearTimeout(listeningTimeoutRef.current);
       }
 
+      isProcessingRef.current = false;
       setStatus('speaking');
       let usedSettings = currentSessionSettings;
 
@@ -131,7 +133,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
   }, [resetTranscript, getNextStepId, isEditing]);
 
   const handleUserResponse = useCallback(async (userTranscript: string) => {
-    if (!currentStep || status !== 'listening') return;
+    if (!currentStep || status !== 'listening' || isProcessingRef.current) return;
 
     if (!userTranscript.trim()) {
       setStatus('speaking');
@@ -140,6 +142,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       return;
     }
 
+    isProcessingRef.current = true;
     // Use 'verifying' as the status during actual Gemini request if enabled
     setStatus(sessionSettings.useGeminiVerification ? 'verifying' : 'processing');
     try {
@@ -187,12 +190,14 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         setFeedback(fb);
         setStatus('speaking');
         await speak(fb, sessionSettings);
+        isProcessingRef.current = false;
         processStep(currentStep, sessionSettings, false);
       }
     } catch (err) {
       console.error('Error in handleUserResponse:', err);
       setError('Failed to process your response.');
       setStatus('error');
+      isProcessingRef.current = false;
     }
   }, [currentStep, sessionSettings, status, processStep, allSteps, getNextStepId]);
 
@@ -273,6 +278,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   const handleBranchSelection = (branchIndex: number) => {
     if (currentStep && currentStep.branches) {
+      resetTranscript();
       // For branch selection, we don't really have a transcript from the user in the same way,
       // but we should record that this step was passed.
       setHistory(prev => [...prev, { stepId: currentStep.id, transcript: currentStep.branches![branchIndex].label }]);
@@ -293,6 +299,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     setIsEditing(true);
     stopSpeaking();
     SpeechRecognition.stopListening();
+    resetTranscript();
     if (listeningTimeoutRef.current) {
       clearTimeout(listeningTimeoutRef.current);
     }
@@ -307,6 +314,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   const saveEditing = (newTranscript: string) => {
     setIsEditing(false);
+    resetTranscript();
     handleUserResponse(newTranscript);
   };
 
