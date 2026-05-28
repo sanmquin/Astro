@@ -51,9 +51,11 @@ export const handler = async (event: { httpMethod: string; body: string }) => {
       }
     `;
 
+    console.log('Gemini Prompt:', prompt);
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
+    console.log('Gemini Response:', text);
 
     const jsonString = text.replace(/```json|```/g, '').trim();
 

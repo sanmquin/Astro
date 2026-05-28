@@ -136,16 +136,20 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       return;
     }
 
-    setStatus('processing');
+    // Use 'verifying' as the status during actual Gemini request if enabled
+    setStatus(sessionSettings.useGeminiVerification ? 'verifying' : 'processing');
     try {
       const result = await evaluateResponse(userTranscript, currentStep, sessionSettings.useGeminiVerification);
 
       if (result.success) {
-        setStatus('verifying');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (!sessionSettings.useGeminiVerification) {
+          // If Gemini was not used, we still show the verifying/verified states for a bit for consistency
+          setStatus('verifying');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
 
         setStatus('verified');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         setHistory(prev => [...prev, currentStep.id]);
 
