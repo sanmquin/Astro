@@ -31,6 +31,8 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
   const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSpokenPromptRef = useRef<string | null>(null);
   const isProcessingRef = useRef(false);
+  const wasListeningRef = useRef(false);
+  const lastTranscriptRef = useRef('');
 
   const {
     transcript,
@@ -38,6 +40,11 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     listening,
     browserSupportsSpeechRecognition
   } = useSpeechRecognition();
+
+  // Sync ref with transcript to use in effect without dependency
+  useEffect(() => {
+    lastTranscriptRef.current = transcript;
+  }, [transcript]);
 
   const currentStep = useMemo(() => allSteps.find(s => s.id === currentStepId), [allSteps, currentStepId]);
 
@@ -103,28 +110,33 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       }
 
       // Check status again as it might have been paused during speaking
+      const nextId = getNextStepId(step);
+      if (nextId === null && (!step.branches || step.branches.length === 0)) {
+        setStatus('idle');
+        setCurrentStepId('FINISHED');
+        return;
+      }
+
       setStatus((prevStatus) => {
         if (prevStatus === 'paused') return 'paused';
-
-        const nextId = getNextStepId(step);
-        if (nextId === null && (!step.branches || step.branches.length === 0)) {
-          // Final interaction, do not wait for user input
-          setCurrentStepId('FINISHED');
-          return 'idle';
-        } else {
-          if (!isEditing) {
-            resetTranscript();
-            SpeechRecognition.startListening({ continuous: true, language: 'es-MX' });
-
-            // Set safety timeout for listening
-            listeningTimeoutRef.current = setTimeout(() => {
-              SpeechRecognition.stopListening();
-            }, currentSessionSettings.maxListeningTime * 1000);
-          }
-
-          return 'listening';
-        }
+        return 'listening';
       });
+
+      if (!isEditing) {
+        resetTranscript();
+        wasListeningRef.current = false;
+        isProcessingRef.current = false;
+
+        // Small delay to ensure browser speech engine is ready
+        setTimeout(() => {
+          SpeechRecognition.startListening({ continuous: true, language: 'es-MX' });
+
+          // Set safety timeout for listening
+          listeningTimeoutRef.current = setTimeout(() => {
+            SpeechRecognition.stopListening();
+          }, currentSessionSettings.maxListeningTime * 1000);
+        }, 100);
+      }
     } catch (err) {
       console.error('Error in processStep:', err);
       setError('Failed to play prompt or start listening.');
@@ -134,15 +146,15 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   const handleUserResponse = useCallback(async (userTranscript: string) => {
     if (!currentStep || status !== 'listening' || isProcessingRef.current) return;
+    isProcessingRef.current = true;
 
     if (!userTranscript.trim()) {
       setStatus('speaking');
       await speak("No pude escucharte. ¿Podrías repetir eso?", sessionSettings);
-      processStep(currentStep, sessionSettings, false);
+      processStep(currentStep, sessionSettings, true); // Force speak for repeat
       return;
     }
 
-    isProcessingRef.current = true;
     // Use 'verifying' as the status during actual Gemini request if enabled
     setStatus(sessionSettings.useGeminiVerification ? 'verifying' : 'processing');
     try {
@@ -203,19 +215,23 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   // Effect to advance when listening stops
   useEffect(() => {
-    if (!listening && status === 'listening' && !isEditing) {
-      // Clear safety timeout if listening stopped manually or via timeout
+    const wasListening = wasListeningRef.current;
+    wasListeningRef.current = listening;
+
+    // Only trigger when transitioning from listening to NOT listening
+    if (wasListening && !listening && status === 'listening' && !isEditing) {
+      // Clear safety timeout
       if (listeningTimeoutRef.current) {
         clearTimeout(listeningTimeoutRef.current);
       }
 
-      // Small delay to ensure transcript is fully captured
+      // Small delay to ensure transcript is fully captured from the ref
       const timeoutId = setTimeout(() => {
-        handleUserResponse(transcript);
-      }, 500);
+        handleUserResponse(lastTranscriptRef.current);
+      }, 300);
       return () => clearTimeout(timeoutId);
     }
-  }, [listening, status, transcript, handleUserResponse, isEditing]);
+  }, [listening, status, handleUserResponse, isEditing]);
 
   // Initial start
   const startAgent = () => {
@@ -239,6 +255,8 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     setFeedback(null);
     setHistory([]);
     lastSpokenPromptRef.current = null;
+    isProcessingRef.current = false;
+    wasListeningRef.current = false;
     resetTranscript();
     stopSpeaking();
     SpeechRecognition.stopListening();
