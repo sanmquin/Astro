@@ -85,8 +85,8 @@ const TestModule: React.FC<TestModuleProps> = ({ onClose, settings }) => {
     setGeminiStatus('running');
     setGeminiError(null);
     try {
-      if (!settings.geminiApiKey) {
-        throw new Error('Gemini API Key is missing');
+      if (!settings.useGeminiVerification) {
+        throw new Error('Gemini Verification is disabled in settings');
       }
       const dummyStep: ScriptStep = {
         id: 'test',
@@ -94,7 +94,7 @@ const TestModule: React.FC<TestModuleProps> = ({ onClose, settings }) => {
         requirement: 'User must say hello',
         nextStepId: null
       };
-      const result = await evaluateResponse('hello', dummyStep, settings.geminiApiKey);
+      const result = await evaluateResponse('hello', dummyStep, settings.useGeminiVerification);
       if (result.success) {
         setGeminiStatus('success');
       } else {
