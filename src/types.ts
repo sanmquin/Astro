@@ -20,7 +20,7 @@ export type Script = {
 export type AgentSettings = {
   elevenLabsApiKey: string;
   elevenLabsVoiceId: string;
-  geminiApiKey: string;
+  useGeminiVerification: boolean;
   useElevenLabs: boolean;
   maxListeningTime: number;
 }

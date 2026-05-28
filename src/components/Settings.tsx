@@ -41,18 +41,18 @@ const Settings: React.FC<SettingsProps> = ({ onClose, onSettingsChange }) => {
         </div>
 
         <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Gemini API Key
-            </label>
+          <div className="flex items-center mb-4">
             <input
-              type="password"
-              name="geminiApiKey"
-              value={settings.geminiApiKey}
+              type="checkbox"
+              id="useGeminiVerification"
+              name="useGeminiVerification"
+              checked={settings.useGeminiVerification}
               onChange={handleChange}
-              className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter Gemini API Key"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
+            <label htmlFor="useGeminiVerification" className="ml-2 block text-sm font-medium text-gray-700">
+              Enable Gemini Verification
+            </label>
           </div>
 
           <div>

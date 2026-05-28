@@ -1,73 +1,52 @@
-# React + TypeScript + Vite
+# Voice Agent Interface
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React + TypeScript voice agent interface built with Vite and Tailwind CSS. It uses Gemini for response evaluation and supports Eleven Labs or Web Speech API for TTS.
 
-Currently, two official plugins are available:
+## Development Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### Prerequisites
 
-## React Compiler
+- Node.js installed.
+- Netlify CLI installed (`npm install -g netlify-cli`).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Environment Variables
 
-## Expanding the ESLint configuration
+To use Gemini verification, you need a Gemini API key. Create a `.env` file in the root directory (or set it in Netlify UI) with the following variable:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Running Locally
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+2. Run the development server with Netlify Dev (to enable functions):
+   ```bash
+   netlify dev
+   ```
+   This will start the Vite dev server and the Netlify Functions server simultaneously.
+
+3. Open your browser at the URL provided by the CLI (usually `http://localhost:8888`).
+
+### Testing Gemini Verification
+
+1. Open the **Settings** menu in the app.
+2. Toggle **Enable Gemini Verification** to ON.
+3. Save settings.
+4. The agent will now use the Netlify Function (Gemini 3.1 Flash Lite) to evaluate your responses.
+
+## Tech Stack
+
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS.
+- **Backend**: Netlify Functions (Serverless).
+- **AI**: Google Gemini API (gemini-3.1-flash-lite).
+- **TTS**: Eleven Labs API & Web Speech API.
+- **STT**: `react-speech-recognition` (Web Speech API).
+
+## Deployment
+
+The project is configured for Netlify deployment. Build and publish directories are defined in `netlify.toml`.

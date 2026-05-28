@@ -138,7 +138,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
     setStatus('processing');
     try {
-      const result = await evaluateResponse(userTranscript, currentStep, sessionSettings.geminiApiKey);
+      const result = await evaluateResponse(userTranscript, currentStep, sessionSettings.useGeminiVerification);
 
       if (result.success) {
         setStatus('verifying');
