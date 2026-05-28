@@ -27,6 +27,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
   const [history, setHistory] = useState<string[]>([]);
 
   const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSpokenPromptRef = useRef<string | null>(null);
 
   const {
     transcript,
@@ -72,7 +73,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     return null;
   }, [script.steps]);
 
-  const processStep = useCallback(async (step: ScriptStep, currentSessionSettings: AgentSettings) => {
+  const processStep = useCallback(async (step: ScriptStep, currentSessionSettings: AgentSettings, forceSpeak: boolean = false) => {
     try {
       if (listeningTimeoutRef.current) {
         clearTimeout(listeningTimeoutRef.current);
@@ -80,16 +81,21 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
       setStatus('speaking');
       let usedSettings = currentSessionSettings;
-      try {
-        await speak(step.prompt, usedSettings);
-      } catch (ttsErr) {
-        console.error('TTS failed in processStep, switching to browser', ttsErr);
-        if (usedSettings.useElevenLabs) {
-          window.alert(`Eleven Labs Error: ${ttsErr instanceof Error ? ttsErr.message : String(ttsErr)}`);
+
+      if (forceSpeak || step.prompt !== lastSpokenPromptRef.current) {
+        try {
+          await speak(step.prompt, usedSettings);
+          lastSpokenPromptRef.current = step.prompt;
+        } catch (ttsErr) {
+          console.error('TTS failed in processStep, switching to browser', ttsErr);
+          if (usedSettings.useElevenLabs) {
+            window.alert(`Eleven Labs Error: ${ttsErr instanceof Error ? ttsErr.message : String(ttsErr)}`);
+          }
+          usedSettings = { ...usedSettings, useElevenLabs: false };
+          setSessionSettings(usedSettings);
+          await speak(step.prompt, usedSettings);
+          lastSpokenPromptRef.current = step.prompt;
         }
-        usedSettings = { ...usedSettings, useElevenLabs: false };
-        setSessionSettings(usedSettings);
-        await speak(step.prompt, usedSettings);
       }
 
       // Check status again as it might have been paused during speaking
@@ -126,7 +132,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     if (!userTranscript.trim()) {
       setStatus('speaking');
       await speak("No pude escucharte. ¿Podrías repetir eso?", sessionSettings);
-      processStep(currentStep, sessionSettings);
+      processStep(currentStep, sessionSettings, false);
       return;
     }
 
@@ -171,7 +177,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         const feedback = result.feedback || "No entendí muy bien. ¿Podrías repetir?";
         setStatus('speaking');
         await speak(feedback, sessionSettings);
-        processStep(currentStep, sessionSettings);
+        processStep(currentStep, sessionSettings, false);
       }
     } catch (err) {
       console.error('Error in handleUserResponse:', err);
@@ -203,6 +209,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
     resetTranscript();
     setHistory([]);
+    lastSpokenPromptRef.current = null;
     setCurrentStepId(script.initialStepId);
     const initialStep = allSteps.find(s => s.id === script.initialStepId);
     if (initialStep) {
@@ -215,6 +222,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     setStatus('idle');
     setError(null);
     setHistory([]);
+    lastSpokenPromptRef.current = null;
     resetTranscript();
     stopSpeaking();
     SpeechRecognition.stopListening();
