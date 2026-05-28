@@ -198,7 +198,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   // Effect to advance when listening stops
   useEffect(() => {
-    if (!listening && status === 'listening') {
+    if (!listening && status === 'listening' && !isEditing) {
       // Clear safety timeout if listening stopped manually or via timeout
       if (listeningTimeoutRef.current) {
         clearTimeout(listeningTimeoutRef.current);
@@ -210,7 +210,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       }, 500);
       return () => clearTimeout(timeoutId);
     }
-  }, [listening, status, transcript, handleUserResponse]);
+  }, [listening, status, transcript, handleUserResponse, isEditing]);
 
   // Initial start
   const startAgent = () => {

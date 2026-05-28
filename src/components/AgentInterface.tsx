@@ -1,7 +1,7 @@
 import React from 'react';
 import { useVoiceAgent } from '../hooks/useVoiceAgent';
 import type { Script, AgentSettings } from '../types';
-import { Mic, MicOff, RefreshCw, Play, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Pause, Square, ChevronRight, FileText } from 'lucide-react';
+import { Mic, MicOff, RefreshCw, Play, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Pause, Square, ChevronRight, FileText, Pencil } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -127,7 +127,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-xl font-bold flex items-center justify-center gap-2">
-                <RefreshCw size={20} className="text-blue-500" /> Editar respuesta
+                <Pencil size={20} className="text-blue-500" /> Editar respuesta
               </h2>
               <p className="text-gray-500 text-sm">La interacción se reanudará al guardar.</p>
             </div>
@@ -214,7 +214,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
                             className="p-1.5 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
                             title="Editar"
                           >
-                            <RefreshCw size={16} />
+                            <Pencil size={16} />
                           </button>
                         </div>
                       )}
@@ -383,7 +383,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
                   }}
                   className="px-6 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-full font-medium transition-colors flex items-center gap-2"
                 >
-                  <RefreshCw size={16} /> Editar
+                  <Pencil size={16} /> Editar
                 </button>
               </div>
             )}
