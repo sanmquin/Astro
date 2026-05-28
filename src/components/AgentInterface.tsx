@@ -1,7 +1,7 @@
 import React from 'react';
 import { useVoiceAgent } from '../hooks/useVoiceAgent';
 import type { Script, AgentSettings } from '../types';
-import { Mic, MicOff, RefreshCw, Play, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Pause, Square, ChevronRight } from 'lucide-react';
+import { Mic, MicOff, RefreshCw, Play, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Pause, Square, ChevronRight, FileText } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -13,14 +13,18 @@ interface AgentInterfaceProps {
   script: Script;
   settings: AgentSettings;
   onFinish?: () => void;
+  onReset?: () => void;
+  isCompleted?: boolean;
+  onNextModule?: () => void;
 }
 
-const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFinish }) => {
+const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFinish, onReset, isCompleted, onNextModule }) => {
   const {
     currentStep,
     status,
     transcript,
     error,
+    feedback,
     startAgent,
     resetAgent,
     pauseAgent,
@@ -30,15 +34,28 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
     handleBranchSelection,
     history,
     totalSteps,
-    isFinished,
-    browserSupportsSpeechRecognition
+    isFinished: isAgentFinished,
+    browserSupportsSpeechRecognition,
+    isEditing,
+    startEditing,
+    cancelEditing,
+    saveEditing,
+    updateAnswer,
+    allSteps
   } = useVoiceAgent(script, settings);
 
+  const [showReview, setShowReview] = React.useState(isCompleted || false);
+  const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
+  const [editValue, setEditValue] = React.useState('');
+  const [currentEditValue, setCurrentEditValue] = React.useState('');
+
+  const isFinished = isAgentFinished || isCompleted;
+
   React.useEffect(() => {
-    if (isFinished && onFinish) {
+    if (isAgentFinished && onFinish) {
       onFinish();
     }
-  }, [isFinished, onFinish]);
+  }, [isAgentFinished, onFinish]);
 
   const currentStepNumber = history.length + 1;
   const progress = isFinished ? 100 : ((currentStepNumber - 1) / Math.max(totalSteps, 1)) * 100;
@@ -86,7 +103,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
         status === 'verified' ? "border-green-600 shadow-green-200" : "",
         status === 'awaiting_selection' ? "border-indigo-500 shadow-indigo-100" : ""
       )}>
-        {status === 'paused' ? (
+        {status === 'paused' && !isEditing ? (
           <div className="text-center py-12 space-y-4">
             <Pause className="mx-auto text-amber-500" size={64} />
             <h2 className="text-2xl font-bold">Pausado</h2>
@@ -106,26 +123,172 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
               </button>
             </div>
           </div>
-        ) : isFinished ? (
-          <div className="text-center py-12 space-y-4">
-            <CheckCircle2 className="mx-auto text-green-500" size={64} />
-            <h2 className="text-2xl font-bold">¡Todo listo!</h2>
+        ) : isEditing ? (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-xl font-bold flex items-center justify-center gap-2">
+                <RefreshCw size={20} className="text-blue-500" /> Editar respuesta
+              </h2>
+              <p className="text-gray-500 text-sm">La interacción se reanudará al guardar.</p>
+            </div>
+            <textarea
+              className="w-full h-32 p-4 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              value={currentEditValue}
+              onChange={(e) => setCurrentEditValue(e.target.value)}
+              placeholder="Escribe tu respuesta aquí..."
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  saveEditing(currentEditValue);
+                  setCurrentEditValue('');
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-lg shadow-blue-200"
+              >
+                Guardar y continuar
+              </button>
+              <button
+                onClick={() => {
+                  cancelEditing();
+                  setCurrentEditValue('');
+                }}
+                className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : isFinished && showReview ? (
+          <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="flex items-center justify-between sticky top-0 bg-white pb-4 z-10">
+              <h2 className="text-2xl font-bold">Resumen de respuestas</h2>
+              <button
+                onClick={() => setShowReview(false)}
+                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+              >
+                Volver
+              </button>
+            </div>
+            <div className="space-y-4">
+              {history.map((item, index) => {
+                const step = allSteps.find(s => s.id === item.stepId);
+                return (
+                  <div key={index} className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-3">
+                    <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Pregunta {index + 1}</p>
+                    <p className="text-gray-800 font-medium">{step?.prompt}</p>
+                    <div className="pl-4 border-l-2 border-blue-200">
+                      <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">Tu respuesta</p>
+                      {editingIndex === index ? (
+                        <div className="space-y-2 mt-2">
+                          <textarea
+                            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                updateAnswer(item.stepId, editValue);
+                                setEditingIndex(null);
+                              }}
+                              className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-lg"
+                            >
+                              Guardar
+                            </button>
+                            <button
+                              onClick={() => setEditingIndex(null)}
+                              className="px-3 py-1 bg-gray-200 text-gray-600 text-xs font-bold rounded-lg"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between items-start gap-4">
+                          <p className="text-gray-600 italic">"{item.transcript}"</p>
+                          <button
+                            onClick={() => {
+                              setEditingIndex(index);
+                              setEditValue(item.transcript);
+                            }}
+                            className="p-1.5 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
+                            title="Editar"
+                          >
+                            <RefreshCw size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
             <button
-              onClick={resetAgent}
-              className="mt-4 px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors flex items-center gap-2 mx-auto"
+              onClick={() => {
+                resetAgent();
+                setShowReview(false);
+                if (onReset) onReset();
+              }}
+              className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
             >
-              <RefreshCw size={18} /> Empezar de nuevo
+              <RefreshCw size={18} /> Reiniciar módulo
             </button>
+          </div>
+        ) : isFinished ? (
+          <div className="text-center py-12 space-y-6">
+            <CheckCircle2 className="mx-auto text-green-500" size={64} />
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold">¡Buen trabajo!</h2>
+              <p className="text-gray-500 text-lg">Has completado este módulo con éxito.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 pt-4">
+              <button
+                onClick={() => setShowReview(true)}
+                className="w-full py-4 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-bold rounded-2xl transition-all flex items-center justify-center gap-2 text-lg shadow-sm"
+              >
+                <FileText size={20} /> Revisar respuestas
+              </button>
+
+              {onNextModule && (
+                <button
+                  onClick={onNextModule}
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 text-lg shadow-lg shadow-blue-200"
+                >
+                  Siguiente módulo <ChevronRight size={20} />
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  resetAgent();
+                  if (onReset) onReset();
+                }}
+                className="mt-2 text-gray-400 hover:text-gray-600 text-sm flex items-center justify-center gap-1 mx-auto"
+              >
+                <RefreshCw size={14} /> Empezar de nuevo
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-8 text-center">
-            <div className="min-h-[100px] flex items-center justify-center">
+            <div className="min-h-[100px] flex flex-col items-center justify-center gap-4">
               {status === 'idle' ? (
                 <p className="text-gray-400 italic">¿Listo para empezar?</p>
               ) : (
-                <p className="text-xl font-medium text-gray-800 leading-relaxed">
-                  {currentStep?.prompt}
-                </p>
+                <>
+                  <p className="text-xl font-medium text-gray-800 leading-relaxed">
+                    {currentStep?.prompt}
+                  </p>
+                  {feedback && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                      <p className="font-semibold flex items-center gap-1">
+                        <AlertCircle size={14} /> Nota:
+                      </p>
+                      <p>{feedback}</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -206,12 +369,23 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
             </div>
 
             {status === 'listening' && (
-              <button
-                onClick={finishListening}
-                className="mx-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors flex items-center gap-2"
-              >
-                <Square size={16} fill="currentColor" /> Terminar de hablar
-              </button>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={finishListening}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors flex items-center gap-2 shadow-lg shadow-blue-100"
+                >
+                  <Square size={16} fill="currentColor" /> Terminar de hablar
+                </button>
+                <button
+                  onClick={() => {
+                    setCurrentEditValue(transcript);
+                    startEditing();
+                  }}
+                  className="px-6 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-full font-medium transition-colors flex items-center gap-2"
+                >
+                  <RefreshCw size={16} /> Editar
+                </button>
+              </div>
             )}
 
             <div className="min-h-[60px] p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">

@@ -24,7 +24,9 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
   const [currentStepId, setCurrentStepId] = useState<string>(script.initialStepId);
   const [status, setStatus] = useState<AgentStatus>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<string[]>([]);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [history, setHistory] = useState<{ stepId: string; transcript: string }[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
 
   const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSpokenPromptRef = useRef<string | null>(null);
@@ -108,13 +110,15 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
           setCurrentStepId('FINISHED');
           return 'idle';
         } else {
-          resetTranscript();
-          SpeechRecognition.startListening({ continuous: true, language: 'es-MX' });
+          if (!isEditing) {
+            resetTranscript();
+            SpeechRecognition.startListening({ continuous: true, language: 'es-MX' });
 
-          // Set safety timeout for listening
-          listeningTimeoutRef.current = setTimeout(() => {
-            SpeechRecognition.stopListening();
-          }, currentSessionSettings.maxListeningTime * 1000);
+            // Set safety timeout for listening
+            listeningTimeoutRef.current = setTimeout(() => {
+              SpeechRecognition.stopListening();
+            }, currentSessionSettings.maxListeningTime * 1000);
+          }
 
           return 'listening';
         }
@@ -124,7 +128,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       setError('Failed to play prompt or start listening.');
       setStatus('error');
     }
-  }, [resetTranscript, getNextStepId]);
+  }, [resetTranscript, getNextStepId, isEditing]);
 
   const handleUserResponse = useCallback(async (userTranscript: string) => {
     if (!currentStep || status !== 'listening') return;
@@ -142,6 +146,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       const result = await evaluateResponse(userTranscript, currentStep, sessionSettings.useGeminiVerification);
 
       if (result.success) {
+        setFeedback(null);
         if (!sessionSettings.useGeminiVerification) {
           // If Gemini was not used, we still show the verifying/verified states for a bit for consistency
           setStatus('verifying');
@@ -151,7 +156,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         setStatus('verified');
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        setHistory(prev => [...prev, currentStep.id]);
+        setHistory(prev => [...prev, { stepId: currentStep.id, transcript: userTranscript }]);
 
         let nextStepId: string | null = null;
 
@@ -178,9 +183,10 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         }
       } else {
         // Repeat the current step, maybe with feedback
-        const feedback = result.feedback || "No entendí muy bien. ¿Podrías repetir?";
+        const fb = result.feedback || "No entendí muy bien. ¿Podrías repetir?";
+        setFeedback(fb);
         setStatus('speaking');
-        await speak(feedback, sessionSettings);
+        await speak(fb, sessionSettings);
         processStep(currentStep, sessionSettings, false);
       }
     } catch (err) {
@@ -225,11 +231,13 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     setCurrentStepId(script.initialStepId);
     setStatus('idle');
     setError(null);
+    setFeedback(null);
     setHistory([]);
     lastSpokenPromptRef.current = null;
     resetTranscript();
     stopSpeaking();
     SpeechRecognition.stopListening();
+    setIsEditing(false);
   };
 
   const pauseAgent = () => {
@@ -250,12 +258,13 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
   const goToPreviousStep = () => {
     if (history.length > 0) {
       const newHistory = [...history];
-      const prevStepId = newHistory.pop();
+      const lastEntry = newHistory.pop();
       setHistory(newHistory);
-      if (prevStepId) {
-        setCurrentStepId(prevStepId);
-        const prevStep = allSteps.find(s => s.id === prevStepId);
+      if (lastEntry) {
+        setCurrentStepId(lastEntry.stepId);
+        const prevStep = allSteps.find(s => s.id === lastEntry.stepId);
         if (prevStep) {
+          setFeedback(null);
           processStep(prevStep, sessionSettings);
         }
       }
@@ -264,7 +273,9 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   const handleBranchSelection = (branchIndex: number) => {
     if (currentStep && currentStep.branches) {
-      setHistory(prev => [...prev, currentStep.id]);
+      // For branch selection, we don't really have a transcript from the user in the same way,
+      // but we should record that this step was passed.
+      setHistory(prev => [...prev, { stepId: currentStep.id, transcript: currentStep.branches![branchIndex].label }]);
       const nextStepId = currentStep.branches[branchIndex].steps[0].id;
       const nextStep = allSteps.find(s => s.id === nextStepId);
       setCurrentStepId(nextStepId);
@@ -278,11 +289,39 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     SpeechRecognition.stopListening();
   };
 
+  const startEditing = () => {
+    setIsEditing(true);
+    stopSpeaking();
+    SpeechRecognition.stopListening();
+    if (listeningTimeoutRef.current) {
+      clearTimeout(listeningTimeoutRef.current);
+    }
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    if (currentStep) {
+      processStep(currentStep, sessionSettings);
+    }
+  };
+
+  const saveEditing = (newTranscript: string) => {
+    setIsEditing(false);
+    handleUserResponse(newTranscript);
+  };
+
+  const updateAnswer = (stepId: string, newTranscript: string) => {
+    setHistory(prev => prev.map(item =>
+      item.stepId === stepId ? { ...item, transcript: newTranscript } : item
+    ));
+  };
+
   return {
     currentStep,
     status,
     transcript,
     error,
+    feedback,
     startAgent,
     resetAgent,
     pauseAgent,
@@ -293,6 +332,12 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     history,
     totalSteps: allSteps.length,
     isFinished: currentStepId === 'FINISHED',
-    browserSupportsSpeechRecognition
+    browserSupportsSpeechRecognition,
+    isEditing,
+    startEditing,
+    cancelEditing,
+    saveEditing,
+    updateAnswer,
+    allSteps // Exporting allSteps to help with review UI
   };
 };
