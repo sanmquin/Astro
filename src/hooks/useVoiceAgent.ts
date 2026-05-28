@@ -28,6 +28,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
   const [history, setHistory] = useState<{ stepId: string; transcript: string }[]>([]);
   const [isEditing, setIsEditing] = useState(false);
 
+  const isEditingRef = useRef(false);
   const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSpokenPromptRef = useRef<string | null>(null);
   const isProcessingRef = useRef(false);
@@ -122,7 +123,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         return 'listening';
       });
 
-      if (!isEditing) {
+      if (!isEditingRef.current) {
         resetTranscript();
         wasListeningRef.current = false;
         isProcessingRef.current = false;
@@ -142,7 +143,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       setError('Failed to play prompt or start listening.');
       setStatus('error');
     }
-  }, [resetTranscript, getNextStepId, isEditing]);
+  }, [resetTranscript, getNextStepId]);
 
   const handleUserResponse = useCallback(async (userTranscript: string) => {
     if (!currentStep || status !== 'listening' || isProcessingRef.current) return;
@@ -219,7 +220,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     wasListeningRef.current = listening;
 
     // Only trigger when transitioning from listening to NOT listening
-    if (wasListening && !listening && status === 'listening' && !isEditing) {
+    if (wasListening && !listening && status === 'listening' && !isEditingRef.current) {
       // Clear safety timeout
       if (listeningTimeoutRef.current) {
         clearTimeout(listeningTimeoutRef.current);
@@ -315,6 +316,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   const startEditing = () => {
     setIsEditing(true);
+    isEditingRef.current = true;
     stopSpeaking();
     SpeechRecognition.stopListening();
     resetTranscript();
@@ -325,6 +327,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   const cancelEditing = () => {
     setIsEditing(false);
+    isEditingRef.current = false;
     if (currentStep) {
       processStep(currentStep, sessionSettings);
     }
@@ -332,6 +335,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   const saveEditing = (newTranscript: string) => {
     setIsEditing(false);
+    isEditingRef.current = false;
     resetTranscript();
     handleUserResponse(newTranscript);
   };
