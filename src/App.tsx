@@ -91,6 +91,7 @@ function App() {
         <AgentInterface
           key={scriptId}
           script={currentScript}
+          scriptId={scriptId}
           settings={settings}
           isCompleted={completedScripts[scriptId]}
           onFinish={() => {

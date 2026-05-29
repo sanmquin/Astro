@@ -11,6 +11,7 @@ function cn(...inputs: ClassValue[]) {
 
 interface AgentInterfaceProps {
   script: Script;
+  scriptId: string;
   settings: AgentSettings;
   isCompleted?: boolean;
   onFinish?: () => void;
@@ -24,7 +25,8 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
   isCompleted,
   onFinish,
   onReset,
-  onProceedNext
+  onProceedNext,
+  scriptId
 }) => {
   const {
     currentStep,
@@ -46,10 +48,11 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
     history,
     totalSteps,
     isFinished,
+    isLoadingHistory,
     browserSupportsSpeechRecognition
-  } = useVoiceAgent(script, settings);
+  } = useVoiceAgent(script, settings, scriptId);
 
-  const [view, setView] = React.useState<'agent' | 'review'>(isCompleted ? 'review' : 'agent');
+  const [view, setView] = React.useState<'agent' | 'review'>(isCompleted || isFinished ? 'review' : 'agent');
   const [editingHistoryId, setEditingHistoryId] = React.useState<string | null>(null);
   const [historyEditValue, setHistoryEditValue] = React.useState('');
   const [editedTranscript, setEditedTranscript] = React.useState('');
@@ -83,8 +86,8 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
   };
 
   React.useEffect(() => {
-    if (isFinished && onFinish) {
-      onFinish();
+    if (isFinished) {
+      if (onFinish) onFinish();
     }
   }, [isFinished, onFinish]);
 
@@ -96,6 +99,15 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
 
   const currentStepNumber = history.length + 1;
   const progress = isFinished ? 100 : ((currentStepNumber - 1) / Math.max(totalSteps, 1)) * 100;
+
+  if (isLoadingHistory) {
+    return (
+      <div className="p-8 text-center flex flex-col items-center gap-4">
+        <Loader2 className="animate-spin text-blue-600" size={48} />
+        <p className="text-gray-500 italic">Cargando tus respuestas...</p>
+      </div>
+    );
+  }
 
   if (!browserSupportsSpeechRecognition) {
     return (

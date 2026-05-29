@@ -11,11 +11,17 @@ A React + TypeScript voice agent interface built with Vite and Tailwind CSS. It 
 
 ### Environment Variables
 
-To use Gemini verification, you need a Gemini API key. Create a `.env` file in the root directory (or set it in Netlify UI) with the following variable:
+To use Gemini verification and MongoDB persistence, you need to set the following environment variables. Create a `.env` file in the root directory (or set it in Netlify UI):
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
+MONGODB_URI=your_mongodb_connection_string_here
+MONGODB_DB=voice_agent (optional)
 ```
+
+- **GEMINI_API_KEY**: Required for response evaluation.
+- **MONGODB_URI**: Required for storing user responses.
+- **MONGODB_DB**: The database name (defaults to `voice_agent`).
 
 ### Running Locally
 
