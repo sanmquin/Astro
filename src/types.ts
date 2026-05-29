@@ -25,4 +25,4 @@ export type AgentSettings = {
   maxListeningTime: number;
 }
 
-export type AgentStatus = 'idle' | 'speaking' | 'listening' | 'paused' | 'processing' | 'verifying' | 'verified' | 'error' | 'awaiting_selection';
+export type AgentStatus = 'idle' | 'speaking' | 'listening' | 'editing' | 'paused' | 'processing' | 'verifying' | 'verified' | 'error' | 'awaiting_selection';
