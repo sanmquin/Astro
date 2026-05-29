@@ -1,0 +1,35 @@
+{
+  "initialStepId": "[1] El Sol",
+  "steps": [
+    {
+      "id": "[1] El Sol",
+      "prompt": "¿Qué te pareció la lectura? ¿En que te identificaste, y en que no? ¿Cómo te describirías?",
+      "requirement": "El usuario debe compartir su opinión sobre la lectura y describirse.",
+      "nextStepId": "[2] Cualidades"
+    },
+    {
+      "id": "[2] Cualidades",
+      "prompt": "¿Cuáles de las cualidades de tu signo tienes? ¿Cuáles cualidades crees que tu pareja admira?",
+      "requirement": "El usuario debe identificar cualidades de su signo y qué admira su pareja.",
+      "nextStepId": "[3] Ser tú mismo"
+    },
+    {
+      "id": "[3] Ser tú mismo",
+      "prompt": "¿Sientes que puedes ser tú mismo en la relación? ¿Qué partes de ti no puedes expresar o tienes que cambiar?",
+      "requirement": "El usuario debe reflexionar sobre su autenticidad en la relación.",
+      "nextStepId": "[4] Defectos"
+    },
+    {
+      "id": "[4] Defectos",
+      "prompt": "¿Cuáles de los defectos de tu signo tienes? ¿Cuáles se manifiestan en tu relación de pareja? ¿En que te gustaría mejorar?",
+      "requirement": "El usuario debe identificar defectos de su signo y áreas de mejora.",
+      "nextStepId": "[5] Siguiente paso"
+    },
+    {
+      "id": "[5] Siguiente paso",
+      "prompt": "¡Felicidades! Vas por muy buen camino. A continuación te presento una lectura sobre La Luna y tus emociones.",
+      "requirement": "Final de la identidad.",
+      "nextStepId": null
+    }
+  ]
+}
