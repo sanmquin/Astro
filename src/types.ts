@@ -26,3 +26,13 @@ export type AgentSettings = {
 }
 
 export type AgentStatus = 'idle' | 'speaking' | 'listening' | 'editing' | 'paused' | 'processing' | 'verifying' | 'verified' | 'error' | 'awaiting_selection';
+
+export type ResponseRecord = {
+  userId: string;
+  scriptId: string;
+  history: {
+    stepId: string;
+    transcript: string;
+  }[];
+  updatedAt: string;
+};
