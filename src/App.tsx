@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import AgentInterface from './components/AgentInterface';
+import AdminInterface from './components/AdminInterface';
 import Settings from './components/Settings';
 import TestModule from './components/TestModule';
 import { loadSettings } from './utils/storage';
 import type { AgentSettings, Script } from './types';
 import astroIntro from './data/astro_intro.json';
 import astroReflexion from './data/astro_reflexion.json';
-import { Settings as SettingsIcon, Activity, FileText } from 'lucide-react';
+import { Settings as SettingsIcon, Activity, FileText, LayoutDashboard } from 'lucide-react';
 
 function App() {
   const [settings, setSettings] = useState<AgentSettings>(loadSettings());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isTestOpen, setIsTestOpen] = useState(false);
   const [currentScript, setCurrentScript] = useState<Script>(astroIntro as Script);
   const [completedScripts, setCompletedScripts] = useState<Record<string, boolean>>({});
@@ -69,6 +71,18 @@ function App() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setIsAdminOpen(!isAdminOpen)}
+              className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium ${
+                isAdminOpen
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+              title="Admin Dashboard"
+            >
+              <LayoutDashboard size={20} />
+              {isAdminOpen ? 'Agente' : 'Admin'}
+            </button>
+            <button
               onClick={() => setIsTestOpen(true)}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               title="System Tests"
@@ -88,21 +102,25 @@ function App() {
 
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center">
-        <AgentInterface
-          key={scriptId}
-          script={currentScript}
-          scriptId={scriptId}
-          settings={settings}
-          isCompleted={completedScripts[scriptId]}
-          onFinish={() => {
-            setCompletedScripts(prev => ({
-              ...prev,
-              [scriptId]: true
-            }));
-          }}
-          onReset={handleReset}
-          onProceedNext={scriptId === 'intro' ? handleProceedNext : undefined}
-        />
+        {isAdminOpen ? (
+          <AdminInterface />
+        ) : (
+          <AgentInterface
+            key={scriptId}
+            script={currentScript}
+            scriptId={scriptId}
+            settings={settings}
+            isCompleted={completedScripts[scriptId]}
+            onFinish={() => {
+              setCompletedScripts(prev => ({
+                ...prev,
+                [scriptId]: true
+              }));
+            }}
+            onReset={handleReset}
+            onProceedNext={scriptId === 'intro' ? handleProceedNext : undefined}
+          />
+        )}
       </main>
 
       {/* Footer */}

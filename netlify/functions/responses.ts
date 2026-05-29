@@ -8,7 +8,11 @@ export const handler = async (event: { httpMethod: string; body: string; querySt
 
   if (event.httpMethod === 'GET') {
     if (!userId || !scriptId) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'userId and scriptId are required' }) };
+      const allResponses = await collection.find({}).toArray();
+      return {
+        statusCode: 200,
+        body: JSON.stringify(allResponses),
+      };
     }
     const responses = await collection.findOne({ userId, scriptId });
     return {
