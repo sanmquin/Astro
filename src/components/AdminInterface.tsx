@@ -1,14 +1,25 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { ResponseRecord, Script, ScriptStep } from '../types';
-import astroIntro from '../data/astro_intro.json';
-import astroReflexion from '../data/astro_reflexion.json';
+import astroIntroduccion from '../data/astro_introduccion.json';
+import astroIdentidad from '../data/astro_identidad.json';
+import astroEmociones from '../data/astro_emociones.json';
+import astroVenus from '../data/astro_venus.json';
 import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle } from 'lucide-react';
 
 type View = 'students' | 'student-detail' | 'module-detail';
 
 const SCRIPTS: Record<string, Script> = {
-  intro: astroIntro as Script,
-  reflexion: astroReflexion as Script,
+  introduccion: astroIntroduccion as Script,
+  identidad: astroIdentidad as Script,
+  emociones: astroEmociones as Script,
+  venus: astroVenus as Script,
+};
+
+const SCRIPT_LABELS: Record<string, string> = {
+  introduccion: 'Introducción',
+  identidad: 'Identidad',
+  emociones: 'Emociones',
+  venus: 'Venus',
 };
 
 export default function AdminInterface() {
@@ -102,7 +113,7 @@ export default function AdminInterface() {
                       className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
                     >
                       <BookOpen size={16} />
-                      Ver {scriptId === 'intro' ? 'Introducción' : 'Reflexión'}
+                      Ver {SCRIPT_LABELS[scriptId] || scriptId}
                     </button>
                   ))}
                 </div>
@@ -187,7 +198,7 @@ export default function AdminInterface() {
                     <div key={scriptId} className="bg-gray-50 rounded-xl p-6 border border-gray-100">
                       <div className="flex justify-between items-start mb-4">
                         <h3 className="text-lg font-bold text-gray-800">
-                          {scriptId === 'intro' ? 'Módulo 1: Introducción' : 'Módulo 2: Reflexión'}
+                          Módulo: {SCRIPT_LABELS[scriptId] || scriptId}
                         </h3>
                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
                           progress === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
@@ -236,7 +247,7 @@ export default function AdminInterface() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-gray-800">
-                      Detalle del Módulo: {selectedScriptId === 'intro' ? 'Introducción' : 'Reflexión'}
+                      Detalle del Módulo: {SCRIPT_LABELS[selectedScriptId] || selectedScriptId}
                     </h2>
                     <p className="text-gray-500">Respuestas agrupadas por pregunta</p>
                   </div>

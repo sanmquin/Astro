@@ -5,38 +5,45 @@ import Settings from './components/Settings';
 import TestModule from './components/TestModule';
 import { loadSettings } from './utils/storage';
 import type { AgentSettings, Script } from './types';
-import astroIntro from './data/astro_intro.json';
-import astroReflexion from './data/astro_reflexion.json';
+import astroIntroduccion from './data/astro_introduccion.json';
+import astroIdentidad from './data/astro_identidad.json';
+import astroEmociones from './data/astro_emociones.json';
+import astroVenus from './data/astro_venus.json';
 import { Settings as SettingsIcon, Activity, FileText, LayoutDashboard } from 'lucide-react';
+
+const SCRIPTS: Record<string, Script> = {
+  introduccion: astroIntroduccion as Script,
+  identidad: astroIdentidad as Script,
+  emociones: astroEmociones as Script,
+  venus: astroVenus as Script,
+};
 
 function App() {
   const [settings, setSettings] = useState<AgentSettings>(loadSettings());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isTestOpen, setIsTestOpen] = useState(false);
-  const [currentScript, setCurrentScript] = useState<Script>(astroIntro as Script);
+  const [scriptId, setScriptId] = useState('introduccion');
+  const [currentScript, setCurrentScript] = useState<Script>(SCRIPTS[scriptId]);
   const [completedScripts, setCompletedScripts] = useState<Record<string, boolean>>({});
 
   const handleSettingsChange = (newSettings: AgentSettings) => {
     setSettings(newSettings);
   };
 
-  const [scriptId, setScriptId] = useState('intro');
-
   const handleScriptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value;
     setScriptId(id);
-    if (id === 'reflexion') {
-      setCurrentScript(astroReflexion as Script);
-    } else {
-      setCurrentScript(astroIntro as Script);
-    }
+    setCurrentScript(SCRIPTS[id]);
   };
 
   const handleProceedNext = () => {
-    if (scriptId === 'intro') {
-      setScriptId('reflexion');
-      setCurrentScript(astroReflexion as Script);
+    const sequence = ['introduccion', 'identidad', 'emociones', 'venus'];
+    const currentIndex = sequence.indexOf(scriptId);
+    if (currentIndex !== -1 && currentIndex < sequence.length - 1) {
+      const nextId = sequence[currentIndex + 1];
+      setScriptId(nextId);
+      setCurrentScript(SCRIPTS[nextId]);
     }
   };
 
@@ -65,8 +72,10 @@ function App() {
               className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
               value={scriptId}
             >
-              <option value="intro">Astro: Introducción</option>
-              <option value="reflexion" disabled={!completedScripts['intro']}>Astro: Reflexión</option>
+              <option value="introduccion">Astro: Introducción</option>
+              <option value="identidad" disabled={!completedScripts['introduccion']}>Astro: Identidad</option>
+              <option value="emociones" disabled={!completedScripts['identidad']}>Astro: Emociones</option>
+              <option value="venus" disabled={!completedScripts['emociones']}>Astro: Venus</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
@@ -118,7 +127,7 @@ function App() {
               }));
             }}
             onReset={handleReset}
-            onProceedNext={scriptId === 'intro' ? handleProceedNext : undefined}
+            onProceedNext={scriptId !== 'venus' ? handleProceedNext : undefined}
           />
         )}
       </main>

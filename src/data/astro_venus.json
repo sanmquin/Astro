@@ -1,0 +1,35 @@
+{
+  "initialStepId": "[1] Venus",
+  "steps": [
+    {
+      "id": "[1] Venus",
+      "prompt": "¿Qué te pareció la lectura? ¿En que te identificaste?",
+      "requirement": "El usuario debe compartir su opinión sobre la lectura.",
+      "nextStepId": "[2] Felicidad"
+    },
+    {
+      "id": "[2] Felicidad",
+      "prompt": "¿Para ti qué es la felicidad?",
+      "requirement": "El usuario debe definir qué es la felicidad para él/ella.",
+      "nextStepId": "[3] Cariño"
+    },
+    {
+      "id": "[3] Cariño",
+      "prompt": "¿Cómo demuestras cariño a tu pareja o seres queridos?",
+      "requirement": "El usuario debe describir cómo demuestra cariño.",
+      "nextStepId": "[4] Dudas"
+    },
+    {
+      "id": "[4] Dudas",
+      "prompt": "Has hecho un excelente trabajo. ¿Tienes alguna duda para Fer o Gaby?",
+      "requirement": "El usuario puede expresar dudas o preguntas.",
+      "nextStepId": "[5] Siguiente módulo"
+    },
+    {
+      "id": "[5] Siguiente módulo",
+      "prompt": "En el siguiente módulo, hablaremos sobre el Karma. Las tendencias que a veces se entrometen con nuestra armonía felicidad, y vida en pareja. Por lo pronto te invitamos a esperar pacientemente la guia de Fer o Gaby en base a tus respuestas.",
+      "requirement": "Final de Venus y del primer curso.",
+      "nextStepId": null
+    }
+  ]
+}
