@@ -4,8 +4,9 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 import type { Script, ScriptStep, AgentSettings, AgentStatus } from '../types';
 import { speak, primeTTS, stopSpeaking } from '../services/tts';
 import { evaluateResponse } from '../services/gemini';
+import { getUserId } from '../utils/storage';
 
-export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
+export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId: string) => {
   // Flatten steps for easy lookup by ID
   const allSteps = useMemo(() => {
     const steps: ScriptStep[] = [];
@@ -26,6 +27,8 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<{ stepId: string; transcript: string }[]>([]);
   const [verificationFeedback, setVerificationFeedback] = useState<string | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const isInitialLoadRef = useRef(true);
 
   const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSpokenPromptRef = useRef<string | null>(null);
@@ -48,6 +51,8 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     setPrevSettings(settings);
     setSessionSettings(settings);
   }
+
+  const userId = useMemo(() => getUserId(), []);
 
   const getNextStepId = useCallback((step: ScriptStep): string | null => {
     if (step.nextStepId) return step.nextStepId;
@@ -74,6 +79,73 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
     return null;
   }, [script.steps]);
+
+  const saveHistory = useCallback(async (newHistory: { stepId: string; transcript: string }[]) => {
+    try {
+      await fetch('/.netlify/functions/responses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, scriptId, history: newHistory }),
+      });
+    } catch (err) {
+      console.error('Failed to save history', err);
+    }
+  }, [userId, scriptId]);
+
+  // Effect to save history when it changes
+  useEffect(() => {
+    if (isInitialLoadRef.current) {
+      return;
+    }
+    saveHistory(history);
+  }, [history, saveHistory]);
+
+  // Fetch initial history
+  useEffect(() => {
+    const fetchHistory = async () => {
+      setIsLoadingHistory(true);
+      try {
+        const response = await fetch(`/.netlify/functions/responses?userId=${userId}&scriptId=${scriptId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.history && data.history.length > 0) {
+            setHistory(data.history);
+
+            // Calculate next step based on loaded history
+            const lastHistoryItem = data.history[data.history.length - 1];
+            const lastStep = allSteps.find(s => s.id === lastHistoryItem.stepId);
+
+            if (lastStep) {
+              let nextStepId: string | null = null;
+              // Check if it was a branch selection
+              if (lastStep.branches) {
+                const selectedBranch = lastStep.branches.find(b => b.label === lastHistoryItem.transcript);
+                if (selectedBranch) {
+                  nextStepId = selectedBranch.steps[0].id;
+                }
+              }
+
+              if (!nextStepId) {
+                nextStepId = getNextStepId(lastStep);
+              }
+
+              if (nextStepId) {
+                setCurrentStepId(nextStepId);
+              } else {
+                setCurrentStepId('FINISHED');
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch history', err);
+      } finally {
+        setIsLoadingHistory(false);
+        isInitialLoadRef.current = false;
+      }
+    };
+    fetchHistory();
+  }, [userId, scriptId, allSteps, getNextStepId]);
 
   const processStep = useCallback(async (step: ScriptStep, currentSessionSettings: AgentSettings, forceSpeak: boolean = false) => {
     try {
@@ -154,7 +226,8 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         setStatus('verified');
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        setHistory(prev => [...prev, { stepId: currentStep.id, transcript: userTranscript }]);
+        const newHistoryItem = { stepId: currentStep.id, transcript: userTranscript };
+        setHistory(prev => [...prev, newHistoryItem]);
 
         let nextStepId: string | null = null;
 
@@ -284,7 +357,8 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       // But we should probably record that we were here.
       // However, the current logic adds to history only when handleUserResponse succeeds.
       // For branches, it's a bit different.
-      setHistory(prev => [...prev, { stepId: currentStep.id, transcript: currentStep.branches![branchIndex].label }]);
+      const newHistoryItem = { stepId: currentStep.id, transcript: currentStep.branches![branchIndex].label };
+      setHistory(prev => [...prev, newHistoryItem]);
       const nextStepId = currentStep.branches[branchIndex].steps[0].id;
       const nextStep = allSteps.find(s => s.id === nextStepId);
       setCurrentStepId(nextStepId);
@@ -336,6 +410,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     history,
     totalSteps: allSteps.length,
     isFinished: currentStepId === 'FINISHED',
+    isLoadingHistory,
     browserSupportsSpeechRecognition
   };
 };

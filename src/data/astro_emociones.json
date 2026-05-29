@@ -1,0 +1,35 @@
+{
+  "initialStepId": "[1] La Luna",
+  "steps": [
+    {
+      "id": "[1] La Luna",
+      "prompt": "¿Qué te pareció la lectura? ¿En que te reflejaste y cómo describirías tus emociones?",
+      "requirement": "El usuario debe compartir su opinión sobre la lectura y describir sus emociones.",
+      "nextStepId": "[2] Reacción emocional"
+    },
+    {
+      "id": "[2] Reacción emocional",
+      "prompt": "¿Cuáles son los eventos que más te afectan, cómo reaccionas emocionalmente en esos casos?",
+      "requirement": "El usuario debe describir qué le afecta y cómo reacciona.",
+      "nextStepId": "[3] Necesidades emocionales"
+    },
+    {
+      "id": "[3] Necesidades emocionales",
+      "prompt": "¿Cuáles son tus necesidades emocionales, qué actividades fortalecen tu estabilidad emocional?",
+      "requirement": "El usuario debe identificar sus necesidades emocionales y actividades de estabilidad.",
+      "nextStepId": "[4] Áreas de mejora"
+    },
+    {
+      "id": "[4] Áreas de mejora",
+      "prompt": "¿Cuales emociones te causan mayor problema? ¿Cómo te gustaría mejorar?",
+      "requirement": "El usuario debe identificar emociones problemáticas y deseos de mejora.",
+      "nextStepId": "[5] Siguiente paso"
+    },
+    {
+      "id": "[5] Siguiente paso",
+      "prompt": "¡Muy bien! Para finalizar este módulo continuaremos con Venus.",
+      "requirement": "Final de emociones.",
+      "nextStepId": null
+    }
+  ]
+}
