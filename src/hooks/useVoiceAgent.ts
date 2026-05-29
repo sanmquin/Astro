@@ -24,7 +24,8 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
   const [currentStepId, setCurrentStepId] = useState<string>(script.initialStepId);
   const [status, setStatus] = useState<AgentStatus>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<{ stepId: string; transcript: string }[]>([]);
+  const [verificationFeedback, setVerificationFeedback] = useState<string | null>(null);
 
   const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSpokenPromptRef = useRef<string | null>(null);
@@ -139,6 +140,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
     // Use 'verifying' as the status during actual Gemini request if enabled
     setStatus(sessionSettings.useGeminiVerification ? 'verifying' : 'processing');
+    setVerificationFeedback(null);
     try {
       const result = await evaluateResponse(userTranscript, currentStep, sessionSettings.useGeminiVerification);
 
@@ -152,7 +154,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
         setStatus('verified');
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        setHistory(prev => [...prev, currentStep.id]);
+        setHistory(prev => [...prev, { stepId: currentStep.id, transcript: userTranscript }]);
 
         let nextStepId: string | null = null;
 
@@ -180,6 +182,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       } else {
         // Repeat the current step, maybe with feedback
         const feedback = result.feedback || "No entendí muy bien. ¿Podrías repetir?";
+        setVerificationFeedback(feedback);
         setStatus('speaking');
         await speak(feedback, sessionSettings);
         processStep(currentStep, sessionSettings, false);
@@ -214,6 +217,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
     resetTranscript();
     setHistory([]);
+    setVerificationFeedback(null);
     lastSpokenPromptRef.current = null;
     isEditingResponseRef.current = false;
     setCurrentStepId(script.initialStepId);
@@ -228,6 +232,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     setStatus('idle');
     setError(null);
     setHistory([]);
+    setVerificationFeedback(null);
     lastSpokenPromptRef.current = null;
     isEditingResponseRef.current = false;
     resetTranscript();
@@ -254,11 +259,12 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
   const goToPreviousStep = () => {
     if (history.length > 0) {
       const newHistory = [...history];
-      const prevStepId = newHistory.pop();
+      const prevItem = newHistory.pop();
       setHistory(newHistory);
-      if (prevStepId) {
-        setCurrentStepId(prevStepId);
-        const prevStep = allSteps.find(s => s.id === prevStepId);
+      setVerificationFeedback(null);
+      if (prevItem) {
+        setCurrentStepId(prevItem.stepId);
+        const prevStep = allSteps.find(s => s.id === prevItem.stepId);
         if (prevStep) {
           processStep(prevStep, sessionSettings);
         }
@@ -266,9 +272,19 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     }
   };
 
+  const updateHistoryTranscript = (stepId: string, newTranscript: string) => {
+    setHistory(prev => prev.map(item =>
+      item.stepId === stepId ? { ...item, transcript: newTranscript } : item
+    ));
+  };
+
   const handleBranchSelection = (branchIndex: number) => {
     if (currentStep && currentStep.branches) {
-      setHistory(prev => [...prev, currentStep.id]);
+      // In branch selection, we don't have a transcript yet for the current step
+      // But we should probably record that we were here.
+      // However, the current logic adds to history only when handleUserResponse succeeds.
+      // For branches, it's a bit different.
+      setHistory(prev => [...prev, { stepId: currentStep.id, transcript: currentStep.branches![branchIndex].label }]);
       const nextStepId = currentStep.branches[branchIndex].steps[0].id;
       const nextStep = allSteps.find(s => s.id === nextStepId);
       setCurrentStepId(nextStepId);
@@ -302,14 +318,17 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   return {
     currentStep,
+    allSteps,
     status,
     transcript,
+    verificationFeedback,
     error,
     startAgent,
     resetAgent,
     pauseAgent,
     resumeAgent,
     goToPreviousStep,
+    updateHistoryTranscript,
     finishListening,
     startEditingResponse,
     submitEditedResponse,

@@ -13,7 +13,7 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTestOpen, setIsTestOpen] = useState(false);
   const [currentScript, setCurrentScript] = useState<Script>(astroIntro as Script);
-  const [introCompleted, setIntroCompleted] = useState(false);
+  const [completedScripts, setCompletedScripts] = useState<Record<string, boolean>>({});
 
   const handleSettingsChange = (newSettings: AgentSettings) => {
     setSettings(newSettings);
@@ -29,6 +29,20 @@ function App() {
     } else {
       setCurrentScript(astroIntro as Script);
     }
+  };
+
+  const handleProceedNext = () => {
+    if (scriptId === 'intro') {
+      setScriptId('reflexion');
+      setCurrentScript(astroReflexion as Script);
+    }
+  };
+
+  const handleReset = () => {
+    setCompletedScripts(prev => ({
+      ...prev,
+      [scriptId]: false
+    }));
   };
 
   return (
@@ -50,7 +64,7 @@ function App() {
               value={scriptId}
             >
               <option value="intro">Astro: Introducción</option>
-              <option value="reflexion" disabled={!introCompleted}>Astro: Reflexión</option>
+              <option value="reflexion" disabled={!completedScripts['intro']}>Astro: Reflexión</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
@@ -78,11 +92,15 @@ function App() {
           key={scriptId}
           script={currentScript}
           settings={settings}
+          isCompleted={completedScripts[scriptId]}
           onFinish={() => {
-            if (scriptId === 'intro') {
-              setIntroCompleted(true);
-            }
+            setCompletedScripts(prev => ({
+              ...prev,
+              [scriptId]: true
+            }));
           }}
+          onReset={handleReset}
+          onProceedNext={scriptId === 'intro' ? handleProceedNext : undefined}
         />
       </main>
 
