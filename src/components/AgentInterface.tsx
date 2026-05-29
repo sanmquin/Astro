@@ -240,7 +240,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
                 </button>
                 <button
                   onClick={handleStartEditingResponse}
-                  className="px-6 py-2 bg-white border-gray-200 hover:bg-sky-700 text-gray-600 rounded-full font-medium transition-colors flex items-center justify-center gap-2"
+                  className="px-6 py-2 bg-white border border-gray-200 hover:bg-sky-700 text-gray-600 rounded-full font-medium transition-colors flex items-center justify-center gap-2"
                 >
                   <Pencil size={16} /> Editar
                 </button>
