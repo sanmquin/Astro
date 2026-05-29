@@ -1,57 +1,33 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ScriptStep } from '../types';
 
 export const evaluateResponse = async (
   transcript: string,
   step: ScriptStep,
-  apiKey: string
+  useGeminiVerification: boolean
 ): Promise<{ success: boolean; feedback?: string; selectedBranchIndex?: number }> => {
-  if (!apiKey) {
-    // If no API key, just assume success for demo purposes if transcript is not empty
+  if (!useGeminiVerification) {
+    // If verification is disabled, just assume success if transcript is not empty
     return { success: transcript.trim().length > 0 };
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const response = await fetch('/.netlify/functions/evaluate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ transcript, step }),
+    });
 
-    let branchesPrompt = '';
-    if (step.branches && step.branches.length > 0) {
-      branchesPrompt = `
-      Este paso tiene las siguientes ramas de bifurcación:
-      ${step.branches.map((b, i) => `${i}. "${b.label}": ${b.requirement}`).join('\n')}
-
-      Si la respuesta del usuario coincide con alguna de estas ramas, incluye "selectedBranchIndex" con el índice correspondiente (0, 1, etc.) en tu respuesta JSON.
-      Si no coincide claramente con ninguna, no incluyas "selectedBranchIndex".
-      `;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to evaluate response');
     }
 
-    const prompt = `
-      Eres un asistente de IA que evalúa la respuesta de un usuario a un mensaje específico en un guion.
-
-      Mensaje del Guion: "${step.prompt}"
-      Requisito: "${step.requirement}"
-      Transcripción del Usuario: "${transcript}"
-      ${branchesPrompt}
-
-      Determina si la respuesta del usuario satisface el requisito.
-      Responde ÚNICAMENTE con un objeto JSON en el siguiente formato:
-      {
-        "success": boolean,
-        "feedback": "Un mensaje corto si fallan (opcional)",
-        "selectedBranchIndex": number (opcional)
-      }
-    `;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    // Clean potential markdown code blocks from the response
-    const jsonString = text.replace(/```json|```/g, '').trim();
-    return JSON.parse(jsonString);
+    return await response.json();
   } catch (error) {
     console.error('Gemini evaluation failed', error);
+    // Fallback to simple check on error
     return { success: transcript.trim().length > 0 };
   }
 };

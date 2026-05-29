@@ -5,7 +5,7 @@ const SETTINGS_KEY = 'agent_settings';
 const DEFAULT_SETTINGS: AgentSettings = {
   elevenLabsApiKey: '',
   elevenLabsVoiceId: 'IKne3meq5aSn9XLyUdCD',
-  geminiApiKey: '',
+  useGeminiVerification: false,
   useElevenLabs: false,
   maxListeningTime: 120, // 2 minutes default
 };

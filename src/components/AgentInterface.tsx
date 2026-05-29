@@ -1,7 +1,7 @@
 import React from 'react';
 import { useVoiceAgent } from '../hooks/useVoiceAgent';
 import type { Script, AgentSettings } from '../types';
-import { Mic, MicOff, RefreshCw, Play, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Pause, Square, ChevronRight } from 'lucide-react';
+import { Mic, MicOff, RefreshCw, Play, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Pause, Square, ChevronRight, Pencil, Send } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -27,12 +27,34 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
     resumeAgent,
     goToPreviousStep,
     finishListening,
+    startEditingResponse,
+    submitEditedResponse,
     handleBranchSelection,
     history,
     totalSteps,
     isFinished,
     browserSupportsSpeechRecognition
   } = useVoiceAgent(script, settings);
+
+  const [editedTranscript, setEditedTranscript] = React.useState('');
+  const previousStatusRef = React.useRef(status);
+
+  React.useEffect(() => {
+    if (status === 'editing' && previousStatusRef.current !== 'editing') {
+      setEditedTranscript(transcript);
+    }
+    previousStatusRef.current = status;
+  }, [status, transcript]);
+
+  const handleStartEditingResponse = () => {
+    setEditedTranscript(transcript);
+    startEditingResponse();
+  };
+
+  const handleSubmitEditedResponse = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitEditedResponse(editedTranscript);
+  };
 
   React.useEffect(() => {
     if (isFinished && onFinish) {
@@ -84,6 +106,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
         status === 'processing' ? "border-purple-500 shadow-purple-100" : "",
         status === 'verifying' ? "border-amber-500 shadow-amber-100" : "",
         status === 'verified' ? "border-green-600 shadow-green-200" : "",
+        status === 'editing' ? "border-sky-500 shadow-sky-100" : "",
         status === 'awaiting_selection' ? "border-indigo-500 shadow-indigo-100" : ""
       )}>
         {status === 'paused' ? (
@@ -151,7 +174,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
               {status !== 'idle' && status !== 'error' && (
                 <button
                   onClick={goToPreviousStep}
-                  disabled={history.length === 0 || status === 'processing' || status === 'verifying' || status === 'verified'}
+                  disabled={history.length === 0 || status === 'editing' || status === 'processing' || status === 'verifying' || status === 'verified'}
                   className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Atrás"
                 >
@@ -178,6 +201,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
                     status === 'processing' ? "bg-purple-500 text-white" : "",
                     status === 'verifying' ? "bg-amber-500 text-white" : "",
                     status === 'verified' ? "bg-green-600 text-white" : "",
+                    status === 'editing' ? "bg-sky-500 text-white" : "",
                     status === 'error' ? "bg-red-500 text-white" : "",
                     status === 'awaiting_selection' ? "bg-indigo-500 text-white opacity-50" : ""
                   )}
@@ -188,6 +212,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
                   {status === 'processing' && <Loader2 size={32} className="animate-spin" />}
                   {status === 'verifying' && <Loader2 size={32} className="animate-spin" />}
                   {status === 'verified' && <CheckCircle2 size={32} />}
+                  {status === 'editing' && <Pencil size={32} />}
                   {status === 'error' && <AlertCircle size={32} />}
                   {status === 'awaiting_selection' && <ChevronRight size={32} />}
                 </button>
@@ -196,7 +221,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
               {status !== 'idle' && status !== 'error' && (
                 <button
                   onClick={pauseAgent}
-                  disabled={status === 'processing' || status === 'verifying' || status === 'verified'}
+                  disabled={status === 'editing' || status === 'processing' || status === 'verifying' || status === 'verified'}
                   className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Pausar"
                 >
@@ -206,18 +231,52 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
             </div>
 
             {status === 'listening' && (
-              <button
-                onClick={finishListening}
-                className="mx-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors flex items-center gap-2"
-              >
-                <Square size={16} fill="currentColor" /> Terminar de hablar
-              </button>
+              <div className="flex flex-col sm:flex-row justify-center gap-3">
+                <button
+                  onClick={finishListening}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Square size={16} fill="currentColor" /> Terminar de hablar
+                </button>
+                <button
+                  onClick={handleStartEditingResponse}
+                  className="px-6 py-2 bg-white border border-gray-200 hover:bg-sky-700 text-gray-600 rounded-full font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Pencil size={16} /> Editar
+                </button>
+              </div>
+            )}
+
+            {status === 'editing' && (
+              <form onSubmit={handleSubmitEditedResponse} className="space-y-3 text-left">
+                <div>
+                  <label htmlFor="edited-transcript" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    Edita la transcripción antes de enviarla
+                  </label>
+                  <textarea
+                    id="edited-transcript"
+                    value={editedTranscript}
+                    onChange={(event) => setEditedTranscript(event.target.value)}
+                    className="w-full min-h-32 rounded-xl border border-sky-200 bg-sky-50/50 p-4 text-gray-800 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                    placeholder="Escribe o corrige tu respuesta aquí..."
+                    autoFocus
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="ml-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Send size={16} /> Enviar respuesta editada
+                </button>
+              </form>
             )}
 
             <div className="min-h-[60px] p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Transcripción</p>
-              <p className="text-gray-600 italic">
-                {transcript || (status === 'listening' ? 'Escuchando...' : 'Tu discurso aparecerá aquí')}
+              <p className="text-gray-600 italic whitespace-pre-wrap">
+                {status === 'editing'
+                  ? (editedTranscript || 'Edita tu respuesta arriba')
+                  : (transcript || (status === 'listening' ? 'Escuchando...' : 'Tu discurso aparecerá aquí'))}
               </p>
             </div>
 
@@ -230,6 +289,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
                   status === 'processing' && "bg-purple-500 animate-pulse",
                   status === 'verifying' && "bg-amber-500 animate-pulse",
                   status === 'verified' && "bg-green-600 animate-pulse",
+                  status === 'editing' && "bg-sky-500 animate-pulse",
                   status === 'awaiting_selection' && "bg-indigo-500 animate-pulse"
                 )} />
                 <span className="text-sm font-medium text-gray-500 capitalize">
@@ -238,6 +298,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({ script, settings, onFin
                    status === 'processing' ? 'Procesando' :
                    status === 'verifying' ? 'Verificando' :
                    status === 'verified' ? 'Verificado' :
+                   status === 'editing' ? 'Editando respuesta' :
                    status === 'awaiting_selection' ? 'Esperando selección' : status}...
                 </span>
               </div>

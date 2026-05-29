@@ -28,6 +28,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
 
   const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSpokenPromptRef = useRef<string | null>(null);
+  const isEditingResponseRef = useRef(false);
 
   const {
     transcript,
@@ -127,7 +128,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
   }, [resetTranscript, getNextStepId]);
 
   const handleUserResponse = useCallback(async (userTranscript: string) => {
-    if (!currentStep || status !== 'listening') return;
+    if (!currentStep) return;
 
     if (!userTranscript.trim()) {
       setStatus('speaking');
@@ -136,16 +137,20 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       return;
     }
 
-    setStatus('processing');
+    // Use 'verifying' as the status during actual Gemini request if enabled
+    setStatus(sessionSettings.useGeminiVerification ? 'verifying' : 'processing');
     try {
-      const result = await evaluateResponse(userTranscript, currentStep, sessionSettings.geminiApiKey);
+      const result = await evaluateResponse(userTranscript, currentStep, sessionSettings.useGeminiVerification);
 
       if (result.success) {
-        setStatus('verifying');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (!sessionSettings.useGeminiVerification) {
+          // If Gemini was not used, we still show the verifying/verified states for a bit for consistency
+          setStatus('verifying');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
 
         setStatus('verified');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         setHistory(prev => [...prev, currentStep.id]);
 
@@ -184,11 +189,11 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
       setError('Failed to process your response.');
       setStatus('error');
     }
-  }, [currentStep, sessionSettings, status, processStep, allSteps, getNextStepId]);
+  }, [currentStep, sessionSettings, processStep, allSteps, getNextStepId]);
 
   // Effect to advance when listening stops
   useEffect(() => {
-    if (!listening && status === 'listening') {
+    if (!listening && status === 'listening' && !isEditingResponseRef.current) {
       // Clear safety timeout if listening stopped manually or via timeout
       if (listeningTimeoutRef.current) {
         clearTimeout(listeningTimeoutRef.current);
@@ -210,6 +215,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     resetTranscript();
     setHistory([]);
     lastSpokenPromptRef.current = null;
+    isEditingResponseRef.current = false;
     setCurrentStepId(script.initialStepId);
     const initialStep = allSteps.find(s => s.id === script.initialStepId);
     if (initialStep) {
@@ -223,12 +229,14 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     setError(null);
     setHistory([]);
     lastSpokenPromptRef.current = null;
+    isEditingResponseRef.current = false;
     resetTranscript();
     stopSpeaking();
     SpeechRecognition.stopListening();
   };
 
   const pauseAgent = () => {
+    isEditingResponseRef.current = false;
     setStatus('paused');
     stopSpeaking();
     SpeechRecognition.stopListening();
@@ -274,6 +282,24 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     SpeechRecognition.stopListening();
   };
 
+  const startEditingResponse = () => {
+    if (status !== 'listening') return;
+
+    isEditingResponseRef.current = true;
+    setStatus('editing');
+    SpeechRecognition.stopListening();
+    if (listeningTimeoutRef.current) {
+      clearTimeout(listeningTimeoutRef.current);
+    }
+  };
+
+  const submitEditedResponse = (editedTranscript: string) => {
+    if (status !== 'editing') return;
+
+    isEditingResponseRef.current = false;
+    handleUserResponse(editedTranscript);
+  };
+
   return {
     currentStep,
     status,
@@ -285,6 +311,8 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings) => {
     resumeAgent,
     goToPreviousStep,
     finishListening,
+    startEditingResponse,
+    submitEditedResponse,
     handleBranchSelection,
     history,
     totalSteps: allSteps.length,
