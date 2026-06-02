@@ -310,7 +310,23 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
           <div className="space-y-8 text-center">
             <div className="min-h-[100px] flex flex-col items-center justify-center gap-4">
               {status === 'idle' ? (
-                <p className="text-gray-400 italic">¿Listo para empezar?</p>
+                script.lecture ? (
+                  <div className="w-full text-left space-y-4 animate-in fade-in duration-700">
+                    <div className="pb-2 border-b border-gray-100">
+                      <h2 className="text-2xl font-bold text-gray-900">{script.lecture.title}</h2>
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {script.lecture.content}
+                      </p>
+                    </div>
+                    <p className="text-sm text-blue-600 font-medium italic">
+                      Lee la información de arriba y presiona el botón para comenzar la interacción.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-400 italic">¿Listo para empezar?</p>
+                )
               ) : (
                 <>
                   <p className="text-xl font-medium text-gray-800 leading-relaxed">

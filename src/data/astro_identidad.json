@@ -1,5 +1,9 @@
 {
   "initialStepId": "[1] El Sol",
+  "lecture": {
+    "title": "Sol en Leo",
+    "content": "Leo es un signo que disfruta de la atención. Es un signo lleno de vida que transforma a las personas a su alrededor con su energía. Leo disfruta de los juegos, y puede ser muy creativo pero solo a cambio de reconocimiento. De lo contrario, esa necesidad de atención lo puede llevar a tomar decisiones equivocadas. \n\nA pesar de que puede parecer infantil o inmaduro, Leo tiene la mayor capacidad de liderazgo: sabe organizar a las personas, es honesto y sorprendentemente sensato. Pero también tiene la tendencia de ser egocéntrico, dominante e incluso despiadado. La misión de Leo es compartir esa pasión que tiene por dentro para el bienestar de todos, aún si eso significa quedarse con la mejor parte."
+  },
   "steps": [
     {
       "id": "[1] El Sol",
