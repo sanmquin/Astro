@@ -12,9 +12,15 @@ export type ScriptBranch = {
   steps: ScriptStep[];
 }
 
+export type Lecture = {
+  title: string;
+  content: string;
+}
+
 export type Script = {
   steps: ScriptStep[];
   initialStepId: string;
+  lecture?: Lecture;
 }
 
 export type AgentSettings = {

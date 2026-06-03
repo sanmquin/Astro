@@ -1,5 +1,9 @@
 {
   "initialStepId": "[1] La Luna",
+  "lecture": {
+    "title": "Luna en Libra",
+    "content": "Libra es el signo del balance y armonía. Las emociones en Libra son generalmente moderadas y tiende a evitar el conflicto. Sin embargo, es altamente sensible. No emocionalmente, sino a través de sus sentidos, sonidos, olores, o incluso palabras y colores que le parezcan desagrables pueden romper ese equilibrio. Libra es un signo pasivo, cuando no encuentra la armonía que busca, rara vez resolverá los problemas por si mismo. En lugar de eso, tenderá a quejarse, culpar a otros y depender de otras personas para resolverlos.\n\nLas necesidades emocionales de Libra giran en torno a otras personas. No requiere de ser la persona más sociable pero si de tener relaciones JUSTAS de las pueda depender. Libra tiende a dar más de lo que recibe, pero en esos momentos de debilidad, pondrá inconscientemente la relación a prueba y de no ser correspondido actuará con sorprendente frialdad, y decisividad. Sin embargo, nunca actuará en soledad, pues rápidamente buscará llenar esas necesidades emocionales en otra persona. Libra es un signo que tiende a la duda, confusión e indecisión por lo que es la fortaleza de sus relaciones la que le dará la claridad y armonía que tanto busca."
+  },
   "steps": [
     {
       "id": "[1] La Luna",

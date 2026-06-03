@@ -1,5 +1,9 @@
 {
   "initialStepId": "[1] Venus",
+  "lecture": {
+    "title": "Venus en Cancer",
+    "content": "Venus en Cancer disfruta del hogar, la buena comida y la familia. Su felicidad esta asociada con la comodidad y el sentimiento de seguridad. La timidez de Venus en Cancer, rara vez le hará buscar la compañía o el amor, pero cuando le sean ofrecidos difícilmente los rechazará. Venus en Cancer preferirá expresar su amor en la intimidad, rara vez en público. Su amor varia como la Luna, en ocasiones es desmedido y en otras apenas siente algo de aftecto. Para su pareja esto puede ser difícil de entender.    \n\nLa buena memoria de Cáncer le hace juzgar su relación desde otra perspectiva. Mientras que su pareja puede estar enfocada en el presente, Cáncer priorizará lo que ha ocurrido en el pasado. Pero por su timidez y vulnerabilidad no siempre lo expresará, creando un silencioso distanciamiento. La sensibilidad de Cáncer, le hace tomar su afecto con extrema seriedad, pero la protección de su caparazón de Cangrejo sanará las heridas con sorprendente facilidad. Sin embargo, la comodidad, y memoria de Cáncer le hace dificil la separación definitiva, apegándose al pasado quizá más de lo que debería. Cáncer rara vez demostrara su amor con grandes gestos románticos. En su lugar, propiciará seguridad, muchas veces financiera y ofrecerá un hogar para disfrutar en familia. A Cáncer el amor le nace del estómago."
+  },
   "steps": [
     {
       "id": "[1] Venus",
