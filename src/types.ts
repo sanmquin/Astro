@@ -36,3 +36,10 @@ export type ResponseRecord = {
   }[];
   updatedAt: string;
 };
+
+export type UserProfile = {
+  username: string;
+  sunSign: string;
+  moonSign: string;
+  venusSign: string;
+};
