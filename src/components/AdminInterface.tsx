@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import type { ResponseRecord, Script, ScriptStep } from '../types';
+import type { ResponseRecord, Script, ScriptStep, UserProfile } from '../types';
 import astroIntroduccion from '../data/astro_introduccion.json';
 import astroIdentidad from '../data/astro_identidad.json';
 import astroEmociones from '../data/astro_emociones.json';
 import astroVenus from '../data/astro_venus.json';
-import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle } from 'lucide-react';
+import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save } from 'lucide-react';
+import { SIGNS } from '../utils/constants';
 
-type View = 'students' | 'student-detail' | 'module-detail';
+type View = 'students' | 'student-detail' | 'module-detail' | 'create-user';
 
 const SCRIPTS: Record<string, Script> = {
   introduccion: astroIntroduccion as Script,
@@ -22,28 +23,42 @@ const SCRIPT_LABELS: Record<string, string> = {
   venus: 'Venus',
 };
 
-export default function AdminInterface() {
+interface AdminInterfaceProps {
+  isRestricted?: boolean;
+}
+
+export default function AdminInterface({ isRestricted = false }: AdminInterfaceProps) {
   const [responses, setResponses] = useState<ResponseRecord[]>([]);
+  const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<View>('students');
+  const [view, setView] = useState<View>(isRestricted ? 'create-user' : 'students');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchResponses = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/.netlify/functions/responses');
-        if (response.ok) {
-          const data = await response.json();
+        const [responsesRes, profilesRes] = await Promise.all([
+          fetch('/.netlify/functions/responses'),
+          fetch('/.netlify/functions/users')
+        ]);
+
+        if (responsesRes.ok) {
+          const data = await responsesRes.json();
           setResponses(data);
         }
+
+        if (profilesRes.ok) {
+          const data = await profilesRes.json();
+          setProfiles(data);
+        }
       } catch (err) {
-        console.error('Failed to fetch responses', err);
+        console.error('Failed to fetch data', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchResponses();
+    fetchData();
   }, []);
 
   const flattenSteps = (script: Script) => {
@@ -84,9 +99,11 @@ export default function AdminInterface() {
         <div className="bg-blue-600 px-6 py-4 flex items-center justify-between text-white">
           <div className="flex items-center gap-3">
             <Users size={24} />
-            <h1 className="text-xl font-bold">Panel de Administración</h1>
+            <h1 className="text-xl font-bold">
+              {isRestricted ? 'Crear Usuarios' : 'Panel de Administración'}
+            </h1>
           </div>
-          {view !== 'students' && (
+          {!isRestricted && view !== 'students' && (
             <button
               onClick={() => setView('students')}
               className="flex items-center gap-2 px-3 py-1.5 bg-blue-500 hover:bg-blue-400 rounded-lg transition-colors text-sm font-medium"
@@ -98,11 +115,125 @@ export default function AdminInterface() {
         </div>
 
         <div className="p-6">
-          {view === 'students' && (
+          {view === 'create-user' && (
+            <div className="max-w-2xl mx-auto space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                  <UserPlus size={24} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Crear Nuevo Usuario</h2>
+                  <p className="text-gray-500">Ingresa los detalles del perfil astrológico</p>
+                </div>
+              </div>
+
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  const data = {
+                    username: formData.get('username') as string,
+                    sunSign: formData.get('sunSign') as string,
+                    moonSign: formData.get('moonSign') as string,
+                    venusSign: formData.get('venusSign') as string,
+                  };
+
+                  try {
+                    const response = await fetch('/.netlify/functions/users', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(data),
+                    });
+
+                    if (response.ok) {
+                      alert('Usuario creado exitosamente');
+                      (e.target as HTMLFormElement).reset();
+                      // Refresh profiles if not restricted
+                      if (!isRestricted) {
+                        const res = await fetch('/.netlify/functions/users');
+                        if (res.ok) setProfiles(await res.json());
+                      }
+                    }
+                  } catch (err) {
+                    console.error('Failed to create user', err);
+                    alert('Error al crear usuario');
+                  }
+                }}
+                className="space-y-6 bg-gray-50 p-8 rounded-2xl border border-gray-100"
+              >
+                <div className="space-y-2">
+                  <label htmlFor="username" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Nombre de Usuario</label>
+                  <input
+                    id="username"
+                    name="username"
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    placeholder="Ej. JuanPerez"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label htmlFor="sunSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Signo Solar</label>
+                    <select
+                      id="sunSign"
+                      name="sunSign"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="moonSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Signo Lunar</label>
+                    <select
+                      id="moonSign"
+                      name="moonSign"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="venusSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Signo Venus</label>
+                    <select
+                      id="venusSign"
+                      name="venusSign"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2"
+                >
+                  <Save size={20} />
+                  Guardar Usuario
+                </button>
+              </form>
+            </div>
+          )}
+
+          {!isRestricted && view === 'students' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-800">Estudiantes</h2>
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => setView('create-user')}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <UserPlus size={16} />
+                    Crear Usuario
+                  </button>
                   {Object.keys(SCRIPTS).map(scriptId => (
                     <button
                       key={scriptId}
@@ -130,9 +261,12 @@ export default function AdminInterface() {
                     </tr>
                   </thead>
                   <tbody>
-                    {Array.from(new Set(responses.map(r => r.userId))).map(userId => {
+                    {profiles.map(profile => {
+                      const userId = profile.username;
                       const userResponses = responses.filter(r => r.userId === userId);
-                      const lastUpdate = new Date(Math.max(...userResponses.map(r => new Date(r.updatedAt).getTime()))).toLocaleDateString();
+                      const lastUpdate = userResponses.length > 0
+                        ? new Date(Math.max(...userResponses.map(r => new Date(r.updatedAt).getTime()))).toLocaleDateString()
+                        : 'Sin actividad';
 
                       // Calculate overall progress
                       const totalSteps = Object.values(scriptSteps).flat().length;
@@ -141,7 +275,14 @@ export default function AdminInterface() {
 
                       return (
                         <tr key={userId} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                          <td className="py-4 px-4 font-medium text-gray-800">{userId.split('-')[0]}...</td>
+                          <td className="py-4 px-4">
+                            <div>
+                              <div className="font-bold text-gray-800">{profile.username}</div>
+                              <div className="text-xs text-gray-400">
+                                ☉ {profile.sunSign} • ☾ {profile.moonSign} • ♀ {profile.venusSign}
+                              </div>
+                            </div>
+                          </td>
                           <td className="py-4 px-4 text-gray-500">{lastUpdate}</td>
                           <td className="py-4 px-4">
                             <div className="flex items-center gap-3">
@@ -175,7 +316,7 @@ export default function AdminInterface() {
             </div>
           )}
 
-          {view === 'student-detail' && selectedUserId && (
+          {!isRestricted && view === 'student-detail' && selectedUserId && (
             <div className="space-y-8">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
@@ -238,7 +379,7 @@ export default function AdminInterface() {
             </div>
           )}
 
-          {view === 'module-detail' && selectedScriptId && (
+          {!isRestricted && view === 'module-detail' && selectedScriptId && (
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -270,19 +411,24 @@ export default function AdminInterface() {
                     </div>
                     <div className="divide-y divide-gray-100">
                       {responses
-                        .filter(r => r.scriptId === selectedScriptId && r.history.some(h => h.stepId === step.id))
+                        .filter(r =>
+                          r.scriptId === selectedScriptId &&
+                          r.history.some(h => h.stepId === step.id) &&
+                          profiles.some(p => p.username === r.userId)
+                        )
                         .map(r => {
                           const answer = r.history.find(h => h.stepId === step.id);
+                          const profile = profiles.find(p => p.username === r.userId);
                           return (
                             <div key={r.userId} className="px-6 py-4 flex gap-4 hover:bg-gray-50 transition-colors">
                               <div className="flex-shrink-0">
-                                <div className="w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center text-xs font-bold">
-                                  {r.userId.substring(0, 2).toUpperCase()}
+                                <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
+                                  {(profile?.username || r.userId).substring(0, 2).toUpperCase()}
                                 </div>
                               </div>
                               <div>
                                 <p className="text-xs font-bold text-gray-400 mb-1">
-                                  Estudiante {r.userId.split('-')[0]}...
+                                  {profile?.username || r.userId}
                                 </p>
                                 <p className="text-gray-700 leading-relaxed">
                                   {answer?.transcript}

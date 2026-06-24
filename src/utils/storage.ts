@@ -2,6 +2,7 @@ import type { AgentSettings } from '../types';
 
 const SETTINGS_KEY = 'agent_settings';
 const USER_ID_KEY = 'agent_user_id';
+const USERNAME_KEY = 'agent_username';
 
 const DEFAULT_SETTINGS: AgentSettings = {
   elevenLabsApiKey: '',
@@ -42,10 +43,26 @@ export const saveSettings = (settings: AgentSettings): void => {
 };
 
 export const getUserId = (): string => {
+  // Use username as userId if available, otherwise fallback to stored UUID
+  const username = localStorage.getItem(USERNAME_KEY);
+  if (username) return username;
+
   let userId = localStorage.getItem(USER_ID_KEY);
   if (!userId) {
     userId = crypto.randomUUID();
     localStorage.setItem(USER_ID_KEY, userId);
   }
   return userId;
+};
+
+export const getUsername = (): string | null => {
+  return localStorage.getItem(USERNAME_KEY);
+};
+
+export const setUsername = (username: string): void => {
+  localStorage.setItem(USERNAME_KEY, username);
+};
+
+export const clearUsername = (): void => {
+  localStorage.removeItem(USERNAME_KEY);
 };

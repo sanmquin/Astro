@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AgentInterface from './components/AgentInterface';
 import AdminInterface from './components/AdminInterface';
 import Settings from './components/Settings';
 import TestModule from './components/TestModule';
-import { loadSettings } from './utils/storage';
-import type { AgentSettings, Script } from './types';
+import LoginModal from './components/LoginModal';
+import { loadSettings, getUsername, setUsername as saveUsername, clearUsername } from './utils/storage';
+import type { AgentSettings, Script, UserProfile } from './types';
 import astroIntroduccion from './data/astro_introduccion.json';
 import astroIdentidad from './data/astro_identidad.json';
 import astroEmociones from './data/astro_emociones.json';
 import astroVenus from './data/astro_venus.json';
-import { Settings as SettingsIcon, Activity, FileText, LayoutDashboard } from 'lucide-react';
+import { Settings as SettingsIcon, Activity, FileText, LayoutDashboard, LogOut } from 'lucide-react';
 
 const SCRIPTS: Record<string, Script> = {
   introduccion: astroIntroduccion as Script,
@@ -20,12 +21,62 @@ const SCRIPTS: Record<string, Script> = {
 
 function App() {
   const [settings, setSettings] = useState<AgentSettings>(loadSettings());
+  const [currentUser, setCurrentUser] = useState<UserProfile | 'admin' | null>(null);
+  const [isLoginChecked, setIsLoginChecked] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isRestrictedAdmin, setIsRestrictedAdmin] = useState(false);
   const [isTestOpen, setIsTestOpen] = useState(false);
   const [scriptId, setScriptId] = useState('introduccion');
   const [currentScript, setCurrentScript] = useState<Script>(SCRIPTS[scriptId]);
   const [completedScripts, setCompletedScripts] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const checkLogin = async () => {
+      const username = getUsername();
+      if (username) {
+        if (username === 'admin') {
+          setCurrentUser('admin');
+          setIsAdminOpen(true);
+          setIsRestrictedAdmin(true);
+        } else {
+          try {
+            const response = await fetch(`/.netlify/functions/users?username=${encodeURIComponent(username)}`);
+            if (response.ok) {
+              const userData = await response.json();
+              setCurrentUser(userData);
+            } else {
+              clearUsername();
+            }
+          } catch (err) {
+            console.error('Failed to restore session', err);
+          }
+        }
+      }
+      setIsLoginChecked(true);
+    };
+    checkLogin();
+  }, []);
+
+  const handleLogin = (user: UserProfile | 'admin') => {
+    setCurrentUser(user);
+    if (user === 'admin') {
+      saveUsername('admin');
+      setIsAdminOpen(true);
+      setIsRestrictedAdmin(true);
+    } else {
+      saveUsername(user.username);
+      setIsAdminOpen(false);
+      setIsRestrictedAdmin(false);
+    }
+  };
+
+  const handleLogout = () => {
+    clearUsername();
+    setCurrentUser(null);
+    setIsAdminOpen(false);
+    setIsRestrictedAdmin(false);
+  };
 
   const handleSettingsChange = (newSettings: AgentSettings) => {
     setSettings(newSettings);
@@ -79,18 +130,20 @@ function App() {
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsAdminOpen(!isAdminOpen)}
-              className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium ${
-                isAdminOpen
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-              title="Admin Dashboard"
-            >
-              <LayoutDashboard size={20} />
-              {isAdminOpen ? 'Agente' : 'Admin'}
-            </button>
+            {!isRestrictedAdmin && (
+              <button
+                onClick={() => setIsAdminOpen(!isAdminOpen)}
+                className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium ${
+                  isAdminOpen
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+                title="Admin Dashboard"
+              >
+                <LayoutDashboard size={20} />
+                {isAdminOpen ? 'Agente' : 'Admin'}
+              </button>
+            )}
             <button
               onClick={() => setIsTestOpen(true)}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -105,6 +158,13 @@ function App() {
             >
               <SettingsIcon size={24} className="text-gray-600" />
             </button>
+            <button
+              onClick={handleLogout}
+              className="p-2 hover:bg-red-50 hover:text-red-600 rounded-full transition-colors"
+              title="Cerrar Sesión"
+            >
+              <LogOut size={24} />
+            </button>
           </div>
         </div>
       </header>
@@ -112,7 +172,7 @@ function App() {
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center">
         {isAdminOpen ? (
-          <AdminInterface />
+          <AdminInterface isRestricted={isRestrictedAdmin} />
         ) : (
           <AgentInterface
             key={scriptId}
@@ -138,6 +198,10 @@ function App() {
       </footer>
 
       {/* Modals */}
+      {!currentUser && isLoginChecked && (
+        <LoginModal onLogin={handleLogin} />
+      )}
+
       {isSettingsOpen && (
         <Settings
           onClose={() => setIsSettingsOpen(false)}
