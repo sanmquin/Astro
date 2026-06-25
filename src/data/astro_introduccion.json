@@ -1,60 +1,52 @@
 {
-  "initialStepId": "[1] Intro",
+  "initialStepId": "[1] Objetivo",
   "steps": [
     {
-      "id": "[1] Intro",
-      "prompt": "Hola mi nombre es Astro, mi misión es guiarte en base a tu carta astral. Cuéntame, ¿Cuál es tu objetivo para este curso? ¿Qué te gustaría lograr?",
-      "requirement": "El usuario debe mencionar sus objetivos para el curso.",
-      "nextStepId": "[2] Tienes pareja"
-    },
-    {
-      "id": "[2] Tienes pareja",
-      "prompt": "¡Genial! Y cuál es tu situación actual? ¿Tienes pareja?",
-      "requirement": "El usuario debe indicar si tiene pareja o no.",
-      "nextStepId": "[5] Siguiente paso",
+      "id": "[1] Objetivo",
+      "type": "multiple-choice",
+      "prompt": "¿Cuál es tu objetivo para este curso?",
+      "requirement": "El usuario debe seleccionar uno de los objetivos.",
+      "nextStepId": "[2] Sound Check",
       "branches": [
         {
-          "label": "Sí",
-          "requirement": "El usuario indica que sí tiene pareja.",
-          "steps": [
-            {
-              "id": "[3a] Situación Actual",
-              "prompt": "Muy bien. ¿Y cómo describirías tu relación de pareja?",
-              "requirement": "El usuario debe describir su relación de pareja.",
-              "nextStepId": "[4a] Mayor problema"
-            },
-            {
-              "id": "[4a] Mayor problema",
-              "prompt": "Entendido. ¿Y cómo te gustaría mejorar la relación? ¿Qué te gustaría que fuera diferente?",
-              "requirement": "El usuario debe mencionar qué le gustaría mejorar en su relación.",
-              "nextStepId": null
-            }
-          ]
+          "label": "Mejorar la comunicación con mi pareja",
+          "requirement": "El usuario quiere mejorar la comunicación.",
+          "steps": []
         },
         {
-          "label": "No",
-          "requirement": "El usuario indica que no tiene pareja.",
-          "steps": [
-            {
-              "id": "[3b] Pareja Ideal",
-              "prompt": "Entendido. ¿Y cómo describirías a tu pareja ideal?",
-              "requirement": "El usuario debe describir a su pareja ideal.",
-              "nextStepId": "[4b] Trabajo personal"
-            },
-            {
-              "id": "[4b] Trabajo personal",
-              "prompt": "Muy bien. ¿Y qué crees que deberías hacer para encontrar pareja? ¿Porqué crees que no la has encontrado hasta el momento?",
-              "requirement": "El usuario debe reflexionar sobre por qué no tiene pareja y qué hacer para encontrar una.",
-              "nextStepId": null
-            }
-          ]
+          "label": "Reavivar el amor",
+          "requirement": "El usuario quiere reavivar el amor.",
+          "steps": []
+        },
+        {
+          "label": "Mejorar la relación por el bien de los hijos",
+          "requirement": "El usuario quiere mejorar por los hijos.",
+          "steps": []
+        },
+        {
+          "label": "Encontrar pareja",
+          "requirement": "El usuario busca pareja.",
+          "steps": []
+        },
+        {
+          "label": "Separarme armoniosamente",
+          "requirement": "El usuario busca separarse armoniosamente.",
+          "steps": []
         }
       ]
     },
     {
-      "id": "[5] Siguiente paso",
-      "prompt": "Gracias por la información. Te invito a que leas la siguiente lectura sobre tu signo solar para seguir platicando.",
-      "requirement": "Final de la introducción.",
+      "id": "[2] Sound Check",
+      "type": "sound-check",
+      "prompt": "Probando el sonido",
+      "requirement": "El usuario debe verificar que escucha el sonido.",
+      "nextStepId": "[3] Mic Check"
+    },
+    {
+      "id": "[3] Mic Check",
+      "type": "mic-check",
+      "prompt": "Ahora probemos tu micrófono. Por favor, di algo para verificar que te escucho.",
+      "requirement": "El usuario debe hablar para probar el micrófono.",
       "nextStepId": null
     }
   ]

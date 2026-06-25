@@ -45,6 +45,9 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
     startEditingResponse,
     submitEditedResponse,
     handleBranchSelection,
+    advanceStep,
+    playPrompt,
+    startListening,
     history,
     totalSteps,
     isFinished,
@@ -56,6 +59,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
   const [editingHistoryId, setEditingHistoryId] = React.useState<string | null>(null);
   const [historyEditValue, setHistoryEditValue] = React.useState('');
   const [editedTranscript, setEditedTranscript] = React.useState('');
+  const [hasPlayedSound, setHasPlayedSound] = React.useState(false);
   const previousStatusRef = React.useRef(status);
 
   React.useEffect(() => {
@@ -93,8 +97,14 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
 
   const handleReset = () => {
     resetAgent();
+    setHasPlayedSound(false);
     if (onReset) onReset();
     setView('agent');
+  };
+
+  const handlePlaySound = async () => {
+    await playPrompt();
+    setHasPlayedSound(true);
   };
 
   const currentStepNumber = history.length + 1;
@@ -251,7 +261,9 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
         status === 'verifying' ? "border-amber-500 shadow-amber-100" : "",
         status === 'verified' ? "border-green-600 shadow-green-200" : "",
         status === 'editing' ? "border-sky-500 shadow-sky-100" : "",
-        status === 'awaiting_selection' ? "border-indigo-500 shadow-indigo-100" : ""
+        status === 'awaiting_selection' ? "border-indigo-500 shadow-indigo-100" : "",
+        status === 'sound_check' ? "border-cyan-500 shadow-cyan-100" : "",
+        status === 'mic_check' ? "border-teal-500 shadow-teal-100" : ""
       )}>
         {status === 'paused' ? (
           <div className="text-center py-12 space-y-4">
@@ -310,7 +322,20 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
           <div className="space-y-8 text-center">
             <div className="min-h-[100px] flex flex-col items-center justify-center gap-4">
               {status === 'idle' ? (
-                <p className="text-gray-400 italic">¿Listo para empezar?</p>
+                <div className="space-y-6 w-full">
+                  {script.lecture && (
+                    <div className="text-left bg-blue-50/50 rounded-2xl p-6 border border-blue-100 space-y-4 max-h-[400px] overflow-y-auto">
+                      <h3 className="text-xl font-bold text-blue-900 flex items-center gap-2">
+                        <FileText className="text-blue-600" size={24} />
+                        {script.lecture.title}
+                      </h3>
+                      <div className="prose prose-blue max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {script.lecture.content}
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-gray-400 italic">¿Listo para empezar?</p>
+                </div>
               ) : (
                 <>
                   <p className="text-xl font-medium text-gray-800 leading-relaxed">
@@ -329,18 +354,57 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
             {status === 'awaiting_selection' && currentStep?.branches && (
               <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Selecciona una opción para continuar:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className={cn(
+                  "gap-3",
+                  currentStep.type === 'multiple-choice' ? "flex flex-col" : "grid grid-cols-1 sm:grid-cols-2"
+                )}>
                   {currentStep.branches.map((branch, index) => (
                     <button
                       key={branch.label}
                       onClick={() => handleBranchSelection(index)}
-                      className="flex items-center justify-between px-6 py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-semibold transition-all border border-indigo-200 group"
+                      className="flex items-center justify-between px-6 py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-semibold transition-all border border-indigo-200 group text-left"
                     >
                       {branch.label}
-                      <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                      <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform flex-shrink-0" />
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {status === 'sound_check' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col items-center gap-4">
+                  <button
+                    onClick={handlePlaySound}
+                    className="flex items-center gap-2 px-8 py-4 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-bold shadow-lg shadow-cyan-100 transition-all active:scale-95"
+                  >
+                    <Play fill="currentColor" size={20} /> Reproducir Sonido
+                  </button>
+                  {hasPlayedSound && (
+                    <p className="text-sm text-gray-500">Si escuchaste el sonido, haz clic en continuar.</p>
+                  )}
+                </div>
+                <button
+                  disabled={!hasPlayedSound}
+                  onClick={advanceStep}
+                  className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+                >
+                  Continuar <ChevronRight size={20} />
+                </button>
+              </div>
+            )}
+
+            {currentStep?.type === 'mic-check' && (status === 'mic_check' || status === 'listening') && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <p className="text-sm text-gray-500">Haz clic en el micrófono y di algo para verificar que te escucho.</p>
+                <button
+                  disabled={!transcript.trim()}
+                  onClick={advanceStep}
+                  className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+                >
+                  Continuar <ChevronRight size={20} />
+                </button>
               </div>
             )}
 
@@ -365,8 +429,8 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
                 )}
 
                 <button
-                  disabled={status !== 'idle' && status !== 'error'}
-                  onClick={startAgent}
+                  disabled={status !== 'idle' && status !== 'error' && status !== 'mic_check'}
+                  onClick={status === 'mic_check' ? startListening : startAgent}
                   className={cn(
                     "relative z-10 w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300",
                     status === 'idle' ? "bg-blue-600 hover:bg-blue-700 text-white" : "",
@@ -377,18 +441,21 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
                     status === 'verified' ? "bg-green-600 text-white" : "",
                     status === 'editing' ? "bg-sky-500 text-white" : "",
                     status === 'error' ? "bg-red-500 text-white" : "",
-                    status === 'awaiting_selection' ? "bg-indigo-500 text-white opacity-50" : ""
+                  status === 'awaiting_selection' ? "bg-indigo-500 text-white opacity-50" : "",
+                  status === 'sound_check' ? "bg-cyan-500 text-white" : "",
+                  status === 'mic_check' ? "bg-teal-500 text-white" : ""
                   )}
                 >
                   {status === 'idle' && <Play size={32} fill="currentColor" />}
                   {status === 'speaking' && <MicOff size={32} />}
-                  {status === 'listening' && <Mic size={32} />}
+                {(status === 'listening' || status === 'mic_check') && <Mic size={32} />}
                   {status === 'processing' && <Loader2 size={32} className="animate-spin" />}
                   {status === 'verifying' && <Loader2 size={32} className="animate-spin" />}
                   {status === 'verified' && <CheckCircle2 size={32} />}
                   {status === 'editing' && <Pencil size={32} />}
                   {status === 'error' && <AlertCircle size={32} />}
                   {status === 'awaiting_selection' && <ChevronRight size={32} />}
+                {status === 'sound_check' && <Play size={32} fill="currentColor" />}
                 </button>
               </div>
 
@@ -464,7 +531,9 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
                   status === 'verifying' && "bg-amber-500 animate-pulse",
                   status === 'verified' && "bg-green-600 animate-pulse",
                   status === 'editing' && "bg-sky-500 animate-pulse",
-                  status === 'awaiting_selection' && "bg-indigo-500 animate-pulse"
+                  status === 'awaiting_selection' && "bg-indigo-500 animate-pulse",
+                  status === 'sound_check' && "bg-cyan-500 animate-pulse",
+                  status === 'mic_check' && "bg-teal-500 animate-pulse"
                 )} />
                 <span className="text-sm font-medium text-gray-500 capitalize">
                   {status === 'speaking' ? 'Hablando' :
@@ -473,7 +542,9 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
                    status === 'verifying' ? 'Verificando' :
                    status === 'verified' ? 'Verificado' :
                    status === 'editing' ? 'Editando respuesta' :
-                   status === 'awaiting_selection' ? 'Esperando selección' : status}...
+                   status === 'awaiting_selection' ? 'Esperando selección' :
+                   status === 'sound_check' ? 'Prueba de sonido' :
+                   status === 'mic_check' ? 'Prueba de micrófono' : status}...
                 </span>
               </div>
             )}
