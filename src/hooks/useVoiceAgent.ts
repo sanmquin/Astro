@@ -309,19 +309,38 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
   }, [listening, status, transcript, handleUserResponse]);
 
   // Initial start
-  const startAgent = () => {
+  const startAgent = (initialHistoryItem?: { stepId: string; transcript: string }) => {
     // Prime TTS on user gesture to unlock audio
     primeTTS().catch(err => console.warn('Failed to prime TTS:', err));
 
     resetTranscript();
-    setHistory([]);
     setVerificationFeedback(null);
     lastSpokenPromptRef.current = null;
     isEditingResponseRef.current = false;
-    setCurrentStepId(script.initialStepId);
-    const initialStep = allSteps.find(s => s.id === script.initialStepId);
-    if (initialStep) {
-      processStep(initialStep, sessionSettings);
+
+    if (initialHistoryItem) {
+      setHistory([initialHistoryItem]);
+      const lastStep = allSteps.find(s => s.id === initialHistoryItem.stepId);
+      if (lastStep) {
+        const nextId = getNextStepId(lastStep);
+        if (nextId) {
+          const nextStep = allSteps.find(s => s.id === nextId);
+          setCurrentStepId(nextId);
+          if (nextStep) {
+            processStep(nextStep, sessionSettings);
+          }
+        } else {
+          setCurrentStepId('FINISHED');
+          setStatus('idle');
+        }
+      }
+    } else {
+      setHistory([]);
+      setCurrentStepId(script.initialStepId);
+      const initialStep = allSteps.find(s => s.id === script.initialStepId);
+      if (initialStep) {
+        processStep(initialStep, sessionSettings);
+      }
     }
   };
 
