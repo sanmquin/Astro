@@ -156,6 +156,16 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
       setStatus('speaking');
       let usedSettings = currentSessionSettings;
 
+      if (step.type === 'sound-check') {
+        setStatus('sound_check');
+        return;
+      }
+
+      if (step.type === 'mic-check') {
+        setStatus('mic_check');
+        return;
+      }
+
       if (forceSpeak || step.prompt !== lastSpokenPromptRef.current) {
         try {
           await speak(step.prompt, usedSettings);
@@ -175,6 +185,10 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
       // Check status again as it might have been paused during speaking
       setStatus((prevStatus) => {
         if (prevStatus === 'paused') return 'paused';
+
+        if (step.type === 'multiple-choice') {
+          return 'awaiting_selection';
+        }
 
         const nextId = getNextStepId(step);
         if (nextId === null && (!step.branches || step.branches.length === 0)) {
@@ -202,6 +216,17 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
 
   const handleUserResponse = useCallback(async (userTranscript: string) => {
     if (!currentStep) return;
+
+    if (currentStep.type === 'mic-check') {
+      if (userTranscript.trim()) {
+        setStatus('mic_check');
+      } else {
+        setStatus('speaking');
+        await speak("No pude escucharte. ¿Podrías repetir eso?", sessionSettings);
+        setStatus('mic_check');
+      }
+      return;
+    }
 
     if (!userTranscript.trim()) {
       setStatus('speaking');
@@ -284,19 +309,38 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
   }, [listening, status, transcript, handleUserResponse]);
 
   // Initial start
-  const startAgent = () => {
+  const startAgent = (initialHistoryItem?: { stepId: string; transcript: string }) => {
     // Prime TTS on user gesture to unlock audio
     primeTTS().catch(err => console.warn('Failed to prime TTS:', err));
 
     resetTranscript();
-    setHistory([]);
     setVerificationFeedback(null);
     lastSpokenPromptRef.current = null;
     isEditingResponseRef.current = false;
-    setCurrentStepId(script.initialStepId);
-    const initialStep = allSteps.find(s => s.id === script.initialStepId);
-    if (initialStep) {
-      processStep(initialStep, sessionSettings);
+
+    if (initialHistoryItem) {
+      setHistory([initialHistoryItem]);
+      const lastStep = allSteps.find(s => s.id === initialHistoryItem.stepId);
+      if (lastStep) {
+        const nextId = getNextStepId(lastStep);
+        if (nextId) {
+          const nextStep = allSteps.find(s => s.id === nextId);
+          setCurrentStepId(nextId);
+          if (nextStep) {
+            processStep(nextStep, sessionSettings);
+          }
+        } else {
+          setCurrentStepId('FINISHED');
+          setStatus('idle');
+        }
+      }
+    } else {
+      setHistory([]);
+      setCurrentStepId(script.initialStepId);
+      const initialStep = allSteps.find(s => s.id === script.initialStepId);
+      if (initialStep) {
+        processStep(initialStep, sessionSettings);
+      }
     }
   };
 
@@ -353,17 +397,26 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
 
   const handleBranchSelection = (branchIndex: number) => {
     if (currentStep && currentStep.branches) {
-      // In branch selection, we don't have a transcript yet for the current step
-      // But we should probably record that we were here.
-      // However, the current logic adds to history only when handleUserResponse succeeds.
-      // For branches, it's a bit different.
-      const newHistoryItem = { stepId: currentStep.id, transcript: currentStep.branches![branchIndex].label };
+      const selectedBranch = currentStep.branches[branchIndex];
+      const newHistoryItem = { stepId: currentStep.id, transcript: selectedBranch.label };
       setHistory(prev => [...prev, newHistoryItem]);
-      const nextStepId = currentStep.branches[branchIndex].steps[0].id;
-      const nextStep = allSteps.find(s => s.id === nextStepId);
-      setCurrentStepId(nextStepId);
-      if (nextStep) {
-        processStep(nextStep, sessionSettings);
+
+      let nextStepId: string | null = null;
+      if (selectedBranch.steps && selectedBranch.steps.length > 0) {
+        nextStepId = selectedBranch.steps[0].id;
+      } else {
+        nextStepId = getNextStepId(currentStep);
+      }
+
+      if (nextStepId) {
+        const nextStep = allSteps.find(s => s.id === nextStepId);
+        setCurrentStepId(nextStepId);
+        if (nextStep) {
+          processStep(nextStep, sessionSettings);
+        }
+      } else {
+        setCurrentStepId('FINISHED');
+        setStatus('idle');
       }
     }
   };
@@ -371,6 +424,18 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
   const finishListening = () => {
     SpeechRecognition.stopListening();
   };
+
+  const startListening = useCallback(() => {
+    resetTranscript();
+    SpeechRecognition.startListening({ continuous: true, language: 'es-MX' });
+    setStatus('listening');
+
+    // Set safety timeout for listening
+    if (listeningTimeoutRef.current) clearTimeout(listeningTimeoutRef.current);
+    listeningTimeoutRef.current = setTimeout(() => {
+      SpeechRecognition.stopListening();
+    }, sessionSettings.maxListeningTime * 1000);
+  }, [resetTranscript, sessionSettings.maxListeningTime]);
 
   const startEditingResponse = () => {
     if (status !== 'listening') return;
@@ -390,6 +455,32 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
     handleUserResponse(editedTranscript);
   };
 
+  const advanceStep = useCallback(() => {
+    if (!currentStep) return;
+    const nextId = getNextStepId(currentStep);
+    if (nextId) {
+      const nextStep = allSteps.find(s => s.id === nextId);
+      setCurrentStepId(nextId);
+      if (nextStep) {
+        processStep(nextStep, sessionSettings);
+      }
+    } else {
+      setCurrentStepId('FINISHED');
+      setStatus('idle');
+    }
+  }, [currentStep, getNextStepId, allSteps, processStep, sessionSettings]);
+
+  const playPrompt = useCallback(async () => {
+    if (!currentStep) return;
+    setStatus('speaking');
+    try {
+      await speak(currentStep.prompt, sessionSettings);
+    } catch (err) {
+      console.error('Failed to play prompt', err);
+    }
+    setStatus(currentStep.type === 'sound-check' ? 'sound_check' : 'idle');
+  }, [currentStep, sessionSettings]);
+
   return {
     currentStep,
     allSteps,
@@ -407,6 +498,9 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
     startEditingResponse,
     submitEditedResponse,
     handleBranchSelection,
+    advanceStep,
+    playPrompt,
+    startListening,
     history,
     totalSteps: allSteps.length,
     isFinished: currentStepId === 'FINISHED',

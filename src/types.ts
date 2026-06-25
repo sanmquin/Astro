@@ -3,6 +3,7 @@ export type ScriptStep = {
   prompt: string;
   requirement: string;
   nextStepId: string | null;
+  type?: 'default' | 'multiple-choice' | 'sound-check' | 'mic-check';
   branches?: ScriptBranch[];
 }
 
@@ -15,6 +16,10 @@ export type ScriptBranch = {
 export type Script = {
   steps: ScriptStep[];
   initialStepId: string;
+  lecture?: {
+    title: string;
+    content: string;
+  };
 }
 
 export type AgentSettings = {
@@ -25,7 +30,7 @@ export type AgentSettings = {
   maxListeningTime: number;
 }
 
-export type AgentStatus = 'idle' | 'speaking' | 'listening' | 'editing' | 'paused' | 'processing' | 'verifying' | 'verified' | 'error' | 'awaiting_selection';
+export type AgentStatus = 'idle' | 'speaking' | 'listening' | 'editing' | 'paused' | 'processing' | 'verifying' | 'verified' | 'error' | 'awaiting_selection' | 'sound_check' | 'mic_check';
 
 export type ResponseRecord = {
   userId: string;
