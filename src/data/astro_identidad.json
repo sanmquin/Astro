@@ -1,9 +1,5 @@
 {
   "initialStepId": "[1] El Sol",
-  "lecture": {
-    "title": "El Sol: Tu Identidad",
-    "content": "El Sol representa tu esencia fundamental, tu ego y el núcleo de tu personalidad. En la astrología, tu signo solar indica cómo brillas en el mundo y cuáles son tus motivaciones básicas. Es la energía que te impulsa a ser quien eres y cómo te expresas de manera natural ante los demás."
-  },
   "steps": [
     {
       "id": "[1] El Sol",
