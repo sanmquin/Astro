@@ -1,33 +1,39 @@
 {
-  "initialStepId": "[1] El Sol",
+  "initialStepId": "[2] Cualidades",
   "steps": [
     {
-      "id": "[1] El Sol",
-      "prompt": "¿Qué te pareció la lectura? ¿En que te identificaste, y en que no? ¿Cómo te describirías?",
-      "requirement": "El usuario debe compartir su opinión sobre la lectura y describirse.",
-      "nextStepId": "[2] Cualidades"
-    },
-    {
       "id": "[2] Cualidades",
-      "prompt": "¿Cuáles de las cualidades de tu signo tienes? ¿Cuáles cualidades crees que tu pareja admira?",
-      "requirement": "El usuario debe identificar cualidades de su signo y qué admira su pareja.",
-      "nextStepId": "[3] Ser tú mismo"
+      "prompt": "¿Cuáles de las características de tu signo tienes?",
+      "requirement": "El usuario debe identificar características de su signo que posee.",
+      "nextStepId": "[3] Armonía"
     },
     {
-      "id": "[3] Ser tú mismo",
-      "prompt": "¿Sientes que puedes ser tú mismo en la relación? ¿Qué partes de ti no puedes expresar o tienes que cambiar?",
-      "requirement": "El usuario debe reflexionar sobre su autenticidad en la relación.",
-      "nextStepId": "[4] Defectos"
+      "id": "[3] Armonía",
+      "prompt": "¿Cuáles están funcionando para la armonía de la relación?",
+      "requirement": "El usuario debe explicar qué características ayudan a la armonía de la relación.",
+      "nextStepId": "[4] Expresión"
     },
     {
-      "id": "[4] Defectos",
-      "prompt": "¿Cuáles de los defectos de tu signo tienes? ¿Cuáles se manifiestan en tu relación de pareja? ¿En que te gustaría mejorar?",
-      "requirement": "El usuario debe identificar defectos de su signo y áreas de mejora.",
-      "nextStepId": "[5] Siguiente paso"
+      "id": "[4] Expresión",
+      "prompt": "¿De las características positivas que no tienes? ¿Porqué crees que no las estas pudiendo expresar?",
+      "requirement": "El usuario debe reflexionar sobre las características positivas ausentes y por qué.",
+      "nextStepId": "[5] Deterioro"
     },
     {
-      "id": "[5] Siguiente paso",
-      "prompt": "¡Felicidades! Vas por muy buen camino. A continuación te presento una lectura sobre La Luna y tus emociones.",
+      "id": "[5] Deterioro",
+      "prompt": "¿Cuáles de tus características negativas están contribuyendo a deteriorar la relación?",
+      "requirement": "El usuario debe identificar características negativas que afectan la relación.",
+      "nextStepId": "[6] Admiración"
+    },
+    {
+      "id": "[6] Admiración",
+      "prompt": "¿Hay alguna otra cualidad que tu pareja admira, que no se haya mencionado?",
+      "requirement": "El usuario debe mencionar otras cualidades que su pareja admire.",
+      "nextStepId": "[7] Siguiente paso"
+    },
+    {
+      "id": "[7] Siguiente paso",
+      "prompt": "!Felicidades! Vas por muy buen camino. A continuación hablaremos sobre tus emociones.",
       "requirement": "Final de la identidad.",
       "nextStepId": null
     }
