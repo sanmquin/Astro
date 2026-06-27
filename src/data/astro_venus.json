@@ -1,34 +1,46 @@
 {
-  "initialStepId": "[1] Venus",
+  "initialStepId": "[1] Felicidad",
   "steps": [
     {
-      "id": "[1] Venus",
-      "prompt": "¿Qué te pareció la lectura? ¿En que te identificaste?",
-      "requirement": "El usuario debe compartir su opinión sobre la lectura.",
-      "nextStepId": "[2] Felicidad"
-    },
-    {
-      "id": "[2] Felicidad",
+      "id": "[1] Felicidad",
       "prompt": "¿Para ti qué es la felicidad?",
-      "requirement": "El usuario debe definir qué es la felicidad para él/ella.",
-      "nextStepId": "[3] Cariño"
+      "requirement": "El usuario debe definir qué es la felicidad.",
+      "nextStepId": "[2] Cariño"
     },
     {
-      "id": "[3] Cariño",
-      "prompt": "¿Cómo demuestras cariño a tu pareja o seres queridos?",
+      "id": "[2] Cariño",
+      "prompt": "¿Cómo demuestras cariño a tu pareja?",
       "requirement": "El usuario debe describir cómo demuestra cariño.",
-      "nextStepId": "[4] Dudas"
+      "nextStepId": "[3] Recibir"
     },
     {
-      "id": "[4] Dudas",
+      "id": "[3] Recibir",
+      "prompt": "¿Que muestras de cariño valoras mas?",
+      "requirement": "El usuario debe identificar qué muestras de cariño valora más.",
+      "nextStepId": "[4] Influencia"
+    },
+    {
+      "id": "[4] Influencia",
+      "prompt": "¿Como influye tu forma de amar en tu relación de pareja?",
+      "requirement": "El usuario debe reflexionar sobre la influencia de su forma de amar.",
+      "nextStepId": "[5] Complicaciones"
+    },
+    {
+      "id": "[5] Complicaciones",
+      "prompt": "¿Que complicaciones trae tu forma de dar y esperar cariño en la relación?",
+      "requirement": "El usuario debe identificar complicaciones relacionadas con el cariño.",
+      "nextStepId": "[6] Dudas"
+    },
+    {
+      "id": "[6] Dudas",
       "prompt": "Has hecho un excelente trabajo. ¿Tienes alguna duda para Fer o Gaby?",
       "requirement": "El usuario puede expresar dudas o preguntas.",
-      "nextStepId": "[5] Siguiente módulo"
+      "nextStepId": "[7] Siguiente leccion"
     },
     {
-      "id": "[5] Siguiente módulo",
-      "prompt": "En el siguiente módulo, hablaremos sobre el Karma. Las tendencias que a veces se entrometen con nuestra armonía felicidad, y vida en pareja. Por lo pronto te invitamos a esperar pacientemente la guia de Fer o Gaby en base a tus respuestas.",
-      "requirement": "Final de Venus y del primer curso.",
+      "id": "[7] Siguiente leccion",
+      "prompt": "!Felicidades! Has terminado la primer lección. A continuación hablaremos sobre el karma y tendencias.",
+      "requirement": "Final de Venus y de la primera lección.",
       "nextStepId": null
     }
   ]
