@@ -437,7 +437,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
               </div>
             )}
 
-            {(status !== 'sound_check' && status !== 'mic_check') && (
+            {(status !== 'sound_check' && status !== 'mic_check' && !(status === 'idle' && currentStep?.type === 'multiple-choice' && history.length === 0)) && (
               <div className="flex items-center justify-center gap-8">
                 {status !== 'idle' && status !== 'error' && (
                   <button
@@ -543,41 +543,45 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
               </form>
             )}
 
-            <div className="min-h-[60px] p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Transcripción</p>
-              <p className="text-gray-600 italic whitespace-pre-wrap">
-                {status === 'editing'
-                  ? (editedTranscript || 'Edita tu respuesta arriba')
-                  : (transcript || (status === 'listening' ? 'Escuchando...' : 'Tu discurso aparecerá aquí'))}
-              </p>
-            </div>
+            {!(status === 'idle' && currentStep?.type === 'multiple-choice' && history.length === 0) && (
+              <>
+                <div className="min-h-[60px] p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Transcripción</p>
+                  <p className="text-gray-600 italic whitespace-pre-wrap">
+                    {status === 'editing'
+                      ? (editedTranscript || 'Edita tu respuesta arriba')
+                      : (transcript || (status === 'listening' ? 'Escuchando...' : 'Tu discurso aparecerá aquí'))}
+                  </p>
+                </div>
 
-            {status !== 'idle' && (
-              <div className="flex justify-center items-center gap-2">
-                <div className={cn(
-                  "w-2 h-2 rounded-full",
-                  status === 'speaking' && "bg-green-500 animate-pulse",
-                  status === 'listening' && "bg-blue-500 animate-pulse",
-                  status === 'processing' && "bg-purple-500 animate-pulse",
-                  status === 'verifying' && "bg-amber-500 animate-pulse",
-                  status === 'verified' && "bg-green-600 animate-pulse",
-                  status === 'editing' && "bg-sky-500 animate-pulse",
-                  status === 'awaiting_selection' && "bg-indigo-500 animate-pulse",
-                  (status as string) === 'sound_check' && "bg-cyan-500 animate-pulse",
-                  (status as string) === 'mic_check' && "bg-teal-500 animate-pulse"
-                )} />
-                <span className="text-sm font-medium text-gray-500 capitalize">
-                  {status === 'speaking' ? 'Hablando' :
-                   status === 'listening' ? 'Escuchando' :
-                   status === 'processing' ? 'Procesando' :
-                   status === 'verifying' ? 'Verificando' :
-                   status === 'verified' ? 'Verificado' :
-                   status === 'editing' ? 'Editando respuesta' :
-                   status === 'awaiting_selection' ? 'Esperando selección' :
-                   (status as string) === 'sound_check' ? 'Prueba de sonido' :
-                   (status as string) === 'mic_check' ? 'Prueba de micrófono' : status}...
-                </span>
-              </div>
+                {status !== 'idle' && (
+                  <div className="flex justify-center items-center gap-2">
+                    <div className={cn(
+                      "w-2 h-2 rounded-full",
+                      status === 'speaking' && "bg-green-500 animate-pulse",
+                      status === 'listening' && "bg-blue-500 animate-pulse",
+                      status === 'processing' && "bg-purple-500 animate-pulse",
+                      status === 'verifying' && "bg-amber-500 animate-pulse",
+                      status === 'verified' && "bg-green-600 animate-pulse",
+                      status === 'editing' && "bg-sky-500 animate-pulse",
+                      status === 'awaiting_selection' && "bg-indigo-500 animate-pulse",
+                      (status as string) === 'sound_check' && "bg-cyan-500 animate-pulse",
+                      (status as string) === 'mic_check' && "bg-teal-500 animate-pulse"
+                    )} />
+                    <span className="text-sm font-medium text-gray-500 capitalize">
+                      {status === 'speaking' ? 'Hablando' :
+                       status === 'listening' ? 'Escuchando' :
+                       status === 'processing' ? 'Procesando' :
+                       status === 'verifying' ? 'Verificando' :
+                       status === 'verified' ? 'Verificado' :
+                       status === 'editing' ? 'Editando respuesta' :
+                       status === 'awaiting_selection' ? 'Esperando selección' :
+                       (status as string) === 'sound_check' ? 'Prueba de sonido' :
+                       (status as string) === 'mic_check' ? 'Prueba de micrófono' : status}...
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
