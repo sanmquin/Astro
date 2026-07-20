@@ -46,7 +46,7 @@ export const VENUS_LECTURES: Record<string, string> = {
 };
 
 export function getLectureForScript(scriptId: string, user: UserProfile | null) {
-  if (!user || (user as any) === 'admin') return null;
+  if (!user) return null;
 
   switch (scriptId) {
     case 'identidad':

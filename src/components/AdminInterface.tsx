@@ -4,7 +4,7 @@ import astroIntroduccion from '../data/astro_introduccion.json';
 import astroIdentidad from '../data/astro_identidad.json';
 import astroEmociones from '../data/astro_emociones.json';
 import astroVenus from '../data/astro_venus.json';
-import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save } from 'lucide-react';
+import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save, RefreshCw } from 'lucide-react';
 import { SIGNS } from '../utils/constants';
 
 type View = 'students' | 'student-detail' | 'module-detail' | 'create-user';
@@ -296,16 +296,45 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                             </div>
                           </td>
                           <td className="py-4 px-4 text-right">
-                            <button
-                              onClick={() => {
-                                setSelectedUserId(userId);
-                                setView('student-detail');
-                              }}
-                              className="inline-flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
-                            >
-                              <User size={16} />
-                              Detalle
-                            </button>
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedUserId(userId);
+                                  setView('student-detail');
+                                }}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                              >
+                                <User size={16} />
+                                Detalle
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm(`¿Estás seguro de que deseas reiniciar el progreso de ${userId}? Esto eliminará todas sus respuestas.`)) {
+                                    try {
+                                      const response = await fetch(`/.netlify/functions/responses?userId=${encodeURIComponent(userId)}`, {
+                                        method: 'DELETE',
+                                      });
+                                      if (response.ok) {
+                                        setResponses(prev => prev.filter(r => r.userId !== userId));
+                                        localStorage.removeItem(`completed_scripts_${userId}`);
+                                        localStorage.removeItem(`current_script_id_${userId}`);
+                                        alert('Progreso reiniciado exitosamente');
+                                      } else {
+                                        alert('Error al reiniciar el progreso');
+                                      }
+                                    } catch (err) {
+                                      console.error('Failed to reset user progress', err);
+                                      alert('Error al reiniciar el progreso');
+                                    }
+                                  }
+                                }}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
+                                title="Reiniciar progreso"
+                              >
+                                <RefreshCw size={16} />
+                                Reiniciar
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -318,14 +347,43 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
 
           {!isRestricted && view === 'student-detail' && selectedUserId && (
             <div className="space-y-8">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-                  <User size={24} />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                    <User size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-800">Detalle del Estudiante</h2>
+                    <p className="text-gray-500 font-mono text-sm">{selectedUserId}</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Detalle del Estudiante</h2>
-                  <p className="text-gray-500 font-mono text-sm">{selectedUserId}</p>
-                </div>
+                <button
+                  onClick={async () => {
+                    if (window.confirm(`¿Estás seguro de que deseas reiniciar el progreso de ${selectedUserId}? Esto eliminará todas sus respuestas.`)) {
+                      try {
+                        const response = await fetch(`/.netlify/functions/responses?userId=${encodeURIComponent(selectedUserId)}`, {
+                          method: 'DELETE',
+                        });
+                        if (response.ok) {
+                          setResponses(prev => prev.filter(r => r.userId !== selectedUserId));
+                          localStorage.removeItem(`completed_scripts_${selectedUserId}`);
+                          localStorage.removeItem(`current_script_id_${selectedUserId}`);
+                          alert('Progreso reiniciado exitosamente');
+                          setView('students');
+                        } else {
+                          alert('Error al reiniciar el progreso');
+                        }
+                      } catch (err) {
+                        console.error('Failed to reset user progress', err);
+                        alert('Error al reiniciar el progreso');
+                      }
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium shadow-md shadow-red-100"
+                >
+                  <RefreshCw size={16} />
+                  Reiniciar Progreso
+                </button>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
