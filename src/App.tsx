@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import AgentInterface from './components/AgentInterface';
 import AdminInterface from './components/AdminInterface';
 import Settings from './components/Settings';
@@ -10,6 +10,7 @@ import astroIntroduccion from './data/astro_introduccion.json';
 import astroIdentidad from './data/astro_identidad.json';
 import astroEmociones from './data/astro_emociones.json';
 import astroVenus from './data/astro_venus.json';
+import { getLectureForScript } from './data/lectures';
 import { Settings as SettingsIcon, Activity, FileText, LayoutDashboard, LogOut } from 'lucide-react';
 
 const SCRIPTS: Record<string, Script> = {
@@ -105,6 +106,17 @@ function App() {
     }));
   };
 
+  const scriptWithDynamicLecture = useMemo(() => {
+    const lecture = getLectureForScript(scriptId, currentUser === 'admin' ? null : currentUser);
+    if (lecture) {
+      return {
+        ...currentScript,
+        lecture
+      };
+    }
+    return currentScript;
+  }, [currentScript, scriptId, currentUser]);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
@@ -176,7 +188,7 @@ function App() {
         ) : (
           <AgentInterface
             key={scriptId}
-            script={currentScript}
+            script={scriptWithDynamicLecture}
             scriptId={scriptId}
             settings={settings}
             isCompleted={completedScripts[scriptId]}
