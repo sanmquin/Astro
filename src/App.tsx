@@ -20,6 +20,24 @@ const SCRIPTS: Record<string, Script> = {
   venus: astroVenus as Script,
 };
 
+const isScriptHistoryCompleted = (scriptId: string, history: { stepId: string }[] | undefined) => {
+  if (!history || history.length === 0) return false;
+
+  if (scriptId === 'introduccion') {
+    return history.some(h => h.stepId === '[3] Mic Check');
+  }
+  if (scriptId === 'identidad') {
+    return history.some(h => h.stepId === '[7] Siguiente paso');
+  }
+  if (scriptId === 'emociones') {
+    return history.some(h => h.stepId === '[7] Siguiente paso');
+  }
+  if (scriptId === 'venus') {
+    return history.some(h => h.stepId === '[7] Siguiente leccion');
+  }
+  return false;
+};
+
 function App() {
   const [settings, setSettings] = useState<AgentSettings>(loadSettings());
   const [currentUser, setCurrentUser] = useState<UserProfile | 'admin' | null>(null);
@@ -31,6 +49,75 @@ function App() {
   const [scriptId, setScriptId] = useState('introduccion');
   const [currentScript, setCurrentScript] = useState<Script>(SCRIPTS[scriptId]);
   const [completedScripts, setCompletedScripts] = useState<Record<string, boolean>>({});
+
+  const loadUserProgress = async (username: string) => {
+    // 1. Fast path: load from localStorage
+    const savedCompleted = localStorage.getItem(`completed_scripts_${username}`);
+    const savedScriptId = localStorage.getItem(`current_script_id_${username}`);
+
+    if (savedCompleted) {
+      try {
+        const initialCompleted = JSON.parse(savedCompleted);
+        setCompletedScripts(initialCompleted);
+      } catch (e) {
+        console.error('Failed to parse savedCompleted', e);
+      }
+    }
+
+    let initialScriptId = 'introduccion';
+    if (savedScriptId && SCRIPTS[savedScriptId]) {
+      initialScriptId = savedScriptId;
+    }
+    setScriptId(initialScriptId);
+    setCurrentScript(SCRIPTS[initialScriptId]);
+
+    // 2. Slow path / sync: load from database
+    try {
+      const response = await fetch(`/.netlify/functions/responses?userId=${encodeURIComponent(username)}`);
+      if (response.ok) {
+        const records = await response.json();
+        if (Array.isArray(records)) {
+          const apiCompleted: Record<string, boolean> = {};
+          const sequence = ['introduccion', 'identidad', 'emociones', 'venus'];
+          sequence.forEach(id => {
+            const record = records.find(r => r.scriptId === id);
+            if (record && record.history) {
+              apiCompleted[id] = isScriptHistoryCompleted(id, record.history);
+            } else {
+              apiCompleted[id] = false;
+            }
+          });
+
+          setCompletedScripts(apiCompleted);
+          localStorage.setItem(`completed_scripts_${username}`, JSON.stringify(apiCompleted));
+
+          // If the user hasn't explicitly set a script, or if the current script is invalid,
+          // we can default to the furthest uncompleted script in the sequence.
+          if (!savedScriptId) {
+            let furthestScriptId = 'introduccion';
+            for (let i = 0; i < sequence.length; i++) {
+              const currentId = sequence[i];
+              if (apiCompleted[currentId]) {
+                if (i < sequence.length - 1) {
+                  furthestScriptId = sequence[i + 1];
+                } else {
+                  furthestScriptId = currentId;
+                }
+              } else {
+                furthestScriptId = currentId;
+                break;
+              }
+            }
+            setScriptId(furthestScriptId);
+            setCurrentScript(SCRIPTS[furthestScriptId]);
+            localStorage.setItem(`current_script_id_${username}`, furthestScriptId);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch user progress from DB', err);
+    }
+  };
 
   useEffect(() => {
     const checkLogin = async () => {
@@ -46,6 +133,7 @@ function App() {
             if (response.ok) {
               const userData = await response.json();
               setCurrentUser(userData);
+              await loadUserProgress(username);
             } else {
               clearUsername();
             }
@@ -69,6 +157,7 @@ function App() {
       saveUsername(user.username);
       setIsAdminOpen(false);
       setIsRestrictedAdmin(false);
+      loadUserProgress(user.username);
     }
   };
 
@@ -77,6 +166,9 @@ function App() {
     setCurrentUser(null);
     setIsAdminOpen(false);
     setIsRestrictedAdmin(false);
+    setScriptId('introduccion');
+    setCurrentScript(SCRIPTS['introduccion']);
+    setCompletedScripts({});
   };
 
   const handleSettingsChange = (newSettings: AgentSettings) => {
@@ -87,6 +179,10 @@ function App() {
     const id = e.target.value;
     setScriptId(id);
     setCurrentScript(SCRIPTS[id]);
+    const username = currentUser && currentUser !== 'admin' ? currentUser.username : '';
+    if (username) {
+      localStorage.setItem(`current_script_id_${username}`, id);
+    }
   };
 
   const handleProceedNext = () => {
@@ -96,14 +192,25 @@ function App() {
       const nextId = sequence[currentIndex + 1];
       setScriptId(nextId);
       setCurrentScript(SCRIPTS[nextId]);
+      const username = currentUser && currentUser !== 'admin' ? currentUser.username : '';
+      if (username) {
+        localStorage.setItem(`current_script_id_${username}`, nextId);
+      }
     }
   };
 
   const handleReset = () => {
-    setCompletedScripts(prev => ({
-      ...prev,
-      [scriptId]: false
-    }));
+    setCompletedScripts(prev => {
+      const updated = {
+        ...prev,
+        [scriptId]: false
+      };
+      const username = currentUser && currentUser !== 'admin' ? currentUser.username : '';
+      if (username) {
+        localStorage.setItem(`completed_scripts_${username}`, JSON.stringify(updated));
+      }
+      return updated;
+    });
   };
 
   const scriptWithDynamicLecture = useMemo(() => {
@@ -193,10 +300,17 @@ function App() {
             settings={settings}
             isCompleted={completedScripts[scriptId]}
             onFinish={() => {
-              setCompletedScripts(prev => ({
-                ...prev,
-                [scriptId]: true
-              }));
+              setCompletedScripts(prev => {
+                const updated = {
+                  ...prev,
+                  [scriptId]: true
+                };
+                const username = currentUser && currentUser !== 'admin' ? currentUser.username : '';
+                if (username) {
+                  localStorage.setItem(`completed_scripts_${username}`, JSON.stringify(updated));
+                }
+                return updated;
+              });
             }}
             onReset={handleReset}
             onProceedNext={scriptId !== 'venus' ? handleProceedNext : undefined}
