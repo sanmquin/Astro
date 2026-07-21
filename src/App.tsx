@@ -229,10 +229,8 @@ function App() {
       {/* Header */}
       <header className="bg-white border-b px-6 py-4 flex justify-between items-center">
         <div className="hidden sm:flex items-center gap-2 font-bold text-xl text-blue-600">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
-            V
-          </div>
-          VoiceAgent
+          <span className="text-2xl" role="img" aria-label="libra">♎️</span>
+          Casa Siete
         </div>
         <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
           <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">

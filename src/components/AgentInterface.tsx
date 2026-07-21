@@ -233,9 +233,9 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
     <div className="flex flex-col items-center justify-center space-y-8 p-4 max-w-2xl mx-auto w-full">
       <div className="text-center space-y-4 w-full">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Agente de Voz</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Agente de Voz “Astro”</h1>
           <p className="text-gray-500">
-            {isFinished ? 'Conversación completada' : 'Sigue el guion para completar la tarea'}
+            {isFinished ? 'Conversación completada' : 'Sigue el guion para completar el curso'}
           </p>
         </div>
 
@@ -246,7 +246,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
               style={{ width: `${progress}%` }}
             ></div>
             <div className="flex justify-between mt-1">
-               <span className="text-xs text-gray-400">Paso {currentStepNumber} (estimado)</span>
+               <span className="text-xs text-gray-400">Paso {currentStepNumber}</span>
                <span className="text-xs text-gray-400">{Math.round(progress)}% Completado</span>
             </div>
           </div>
