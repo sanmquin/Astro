@@ -4,6 +4,9 @@ import astroIntroduccion from '../data/astro_introduccion.json';
 import astroIdentidad from '../data/astro_identidad.json';
 import astroEmociones from '../data/astro_emociones.json';
 import astroVenus from '../data/astro_venus.json';
+import astroInfancia from '../data/astro_infancia.json';
+import astroDescendente from '../data/astro_descendente.json';
+import astroNodoLunar from '../data/astro_nodo_lunar.json';
 import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save, RefreshCw } from 'lucide-react';
 import { SIGNS } from '../utils/constants';
 
@@ -14,6 +17,9 @@ const SCRIPTS: Record<string, Script> = {
   identidad: astroIdentidad as Script,
   emociones: astroEmociones as Script,
   venus: astroVenus as Script,
+  infancia: astroInfancia as Script,
+  descendente: astroDescendente as Script,
+  nodo_lunar: astroNodoLunar as Script,
 };
 
 const SCRIPT_LABELS: Record<string, string> = {
@@ -21,6 +27,9 @@ const SCRIPT_LABELS: Record<string, string> = {
   identidad: 'Identidad',
   emociones: 'Emociones',
   venus: 'Venus',
+  infancia: 'Infancia',
+  descendente: 'Descendente',
+  nodo_lunar: 'Nodo Lunar',
 };
 
 interface AdminInterfaceProps {
@@ -136,6 +145,9 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     sunSign: formData.get('sunSign') as string,
                     moonSign: formData.get('moonSign') as string,
                     venusSign: formData.get('venusSign') as string,
+                    casaCuatroSign: formData.get('casaCuatroSign') as string,
+                    descendenteSign: formData.get('descendenteSign') as string,
+                    nodoLunarSign: formData.get('nodoLunarSign') as string,
                   };
 
                   try {
@@ -178,6 +190,42 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     <select
                       id="sunSign"
                       name="sunSign"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="casaCuatroSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Casa Cuatro</label>
+                    <select
+                      id="casaCuatroSign"
+                      name="casaCuatroSign"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="descendenteSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Descendente</label>
+                    <select
+                      id="descendenteSign"
+                      name="descendenteSign"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="nodoLunarSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Nodo Lunar</label>
+                    <select
+                      id="nodoLunarSign"
+                      name="nodoLunarSign"
                       required
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
                     >
@@ -280,6 +328,9 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                               <div className="font-bold text-gray-800">{profile.username}</div>
                               <div className="text-xs text-gray-400">
                                 ☉ {profile.sunSign} • ☾ {profile.moonSign} • ♀ {profile.venusSign}
+                                {profile.casaCuatroSign && ` • 🏠 ${profile.casaCuatroSign}`}
+                                {profile.descendenteSign && ` • ☍ ${profile.descendenteSign}`}
+                                {profile.nodoLunarSign && ` • ☊ ${profile.nodoLunarSign}`}
                               </div>
                             </div>
                           </td>

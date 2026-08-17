@@ -47,4 +47,7 @@ export type UserProfile = {
   sunSign: string;
   moonSign: string;
   venusSign: string;
+  casaCuatroSign?: string;
+  descendenteSign?: string;
+  nodoLunarSign?: string;
 };
