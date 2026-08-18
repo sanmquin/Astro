@@ -54,4 +54,5 @@ export type UserProfile = {
   casaCuatroSign?: string;
   descendenteSign?: string;
   nodoLunarSign?: string;
+  isAdmin?: boolean;
 };
