@@ -323,7 +323,21 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
             <div className="min-h-[100px] flex flex-col items-center justify-center gap-4">
               {status === 'idle' ? (
                 <div className="space-y-6 w-full">
-                  {script.lecture && (
+                  {script.lectures && script.lectures.length > 0 ? (
+                    <div className="space-y-4 max-h-[450px] overflow-y-auto pr-1">
+                      {script.lectures.map((item, idx) => (
+                        <div key={idx} className="text-left bg-blue-50/50 rounded-2xl p-6 border border-blue-100 space-y-4">
+                          <h3 className="text-xl font-bold text-blue-900 flex items-center gap-2">
+                            <FileText className="text-blue-600" size={24} />
+                            {item.title}
+                          </h3>
+                          <div className="prose prose-blue max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+                            {item.content}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : script.lecture ? (
                     <div className="text-left bg-blue-50/50 rounded-2xl p-6 border border-blue-100 space-y-4 max-h-[400px] overflow-y-auto">
                       <h3 className="text-xl font-bold text-blue-900 flex items-center gap-2">
                         <FileText className="text-blue-600" size={24} />
@@ -333,7 +347,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
                         {script.lecture.content}
                       </div>
                     </div>
-                  )}
+                  ) : null}
                   {currentStep?.type === 'multiple-choice' && history.length === 0 ? (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <p className="text-xl font-medium text-gray-800 leading-relaxed">

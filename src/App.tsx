@@ -229,11 +229,17 @@ function App() {
   };
 
   const scriptWithDynamicLecture = useMemo(() => {
-    const lecture = getLectureForScript(scriptId, currentUser === 'admin' ? null : currentUser);
-    if (lecture) {
+    const lectureResult = getLectureForScript(scriptId, currentUser === 'admin' ? null : currentUser);
+    if (lectureResult) {
+      if (Array.isArray(lectureResult)) {
+        return {
+          ...currentScript,
+          lectures: lectureResult
+        };
+      }
       return {
         ...currentScript,
-        lecture
+        lecture: lectureResult
       };
     }
     return currentScript;
@@ -256,12 +262,12 @@ function App() {
               value={scriptId}
             >
               <option value="introduccion">Astro: Introducción</option>
-              <option value="identidad" disabled={!completedScripts['introduccion']}>Astro: Identidad</option>
-              <option value="emociones" disabled={!completedScripts['identidad']}>Astro: Emociones</option>
-              <option value="venus" disabled={!completedScripts['emociones']}>Astro: Venus</option>
-              <option value="infancia" disabled={!completedScripts['venus']}>Astro: Infancia</option>
-              <option value="descendente" disabled={!completedScripts['infancia']}>Astro: Descendente</option>
-              <option value="nodo_lunar" disabled={!completedScripts['descendente']}>Astro: Nodo Lunar</option>
+              <option value="identidad" disabled={currentUser !== 'admin' && !completedScripts['introduccion']}>Astro: Identidad</option>
+              <option value="emociones" disabled={currentUser !== 'admin' && !completedScripts['identidad']}>Astro: Emociones</option>
+              <option value="venus" disabled={currentUser !== 'admin' && !completedScripts['emociones']}>Astro: Venus</option>
+              <option value="infancia" disabled={currentUser !== 'admin' && !completedScripts['venus']}>Astro: Infancia</option>
+              <option value="descendente" disabled={currentUser !== 'admin' && !completedScripts['infancia']}>Astro: Descendente</option>
+              <option value="nodo_lunar" disabled={currentUser !== 'admin' && !completedScripts['descendente']}>Astro: Nodo Lunar</option>
             </select>
           </div>
           <div className="flex items-center gap-2">

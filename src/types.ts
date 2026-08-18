@@ -20,6 +20,10 @@ export type Script = {
     title: string;
     content: string;
   };
+  lectures?: {
+    title: string;
+    content: string;
+  }[];
 }
 
 export type AgentSettings = {
