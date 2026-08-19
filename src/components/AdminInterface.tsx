@@ -7,8 +7,11 @@ import astroVenus from '../data/astro_venus.json';
 import astroInfancia from '../data/astro_infancia.json';
 import astroDescendente from '../data/astro_descendente.json';
 import astroNodoLunar from '../data/astro_nodo_lunar.json';
+import astroCasaSolar from '../data/astro_casa_solar.json';
+import astroCasaKarma from '../data/astro_casa_karma.json';
+import astroValores from '../data/astro_valores.json';
 import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save, RefreshCw } from 'lucide-react';
-import { SIGNS } from '../utils/constants';
+import { SIGNS, HOUSES } from '../utils/constants';
 
 type View = 'students' | 'student-detail' | 'module-detail' | 'create-user';
 
@@ -20,6 +23,9 @@ const SCRIPTS: Record<string, Script> = {
   infancia: astroInfancia as Script,
   descendente: astroDescendente as Script,
   nodo_lunar: astroNodoLunar as Script,
+  casa_solar: astroCasaSolar as Script,
+  casa_karma: astroCasaKarma as Script,
+  valores: astroValores as Script,
 };
 
 const SCRIPT_LABELS: Record<string, string> = {
@@ -30,6 +36,9 @@ const SCRIPT_LABELS: Record<string, string> = {
   infancia: 'Infancia',
   descendente: 'Descendente',
   nodo_lunar: 'Nodo Lunar',
+  casa_solar: 'Casa Solar',
+  casa_karma: 'Casa Karma',
+  valores: 'Valores',
 };
 
 interface AdminInterfaceProps {
@@ -149,6 +158,8 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     casaCuatroSign: formData.get('casaCuatroSign') as string,
                     descendenteSign: formData.get('descendenteSign') as string,
                     nodoLunarSign: formData.get('nodoLunarSign') as string,
+                    casaSolar: formData.get('casaSolar') as string,
+                    casaKarma: formData.get('casaKarma') as string,
                     isAdmin: formData.get('isAdmin') === 'on',
                   };
 
@@ -259,6 +270,30 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                       {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
                     </select>
                   </div>
+                  <div className="space-y-2">
+                    <label htmlFor="casaSolar" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Casa Solar</label>
+                    <select
+                      id="casaSolar"
+                      name="casaSolar"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {HOUSES.map(house => <option key={house} value={house}>{house}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="casaKarma" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Casa Karma</label>
+                    <select
+                      id="casaKarma"
+                      name="casaKarma"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {HOUSES.map(house => <option key={house} value={house}>{house}</option>)}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-3 pt-2">
@@ -288,7 +323,7 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-800">Estudiantes</h2>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={() => setView('create-user')}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
@@ -345,6 +380,8 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                                 {profile.casaCuatroSign && ` • 🏠 ${profile.casaCuatroSign}`}
                                 {profile.descendenteSign && ` • ☍ ${profile.descendenteSign}`}
                                 {profile.nodoLunarSign && ` • ☊ ${profile.nodoLunarSign}`}
+                                {profile.casaSolar && ` • ☀️ ${profile.casaSolar}`}
+                                {profile.casaKarma && ` • ☯ ${profile.casaKarma}`}
                               </div>
                             </div>
                           </td>
@@ -599,6 +636,8 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                   casaCuatroSign: formData.get('casaCuatroSign') as string,
                   descendenteSign: formData.get('descendenteSign') as string,
                   nodoLunarSign: formData.get('nodoLunarSign') as string,
+                  casaSolar: formData.get('casaSolar') as string,
+                  casaKarma: formData.get('casaKarma') as string,
                   isAdmin: formData.get('isAdmin') === 'on',
                 };
 
@@ -688,6 +727,28 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     className="w-full p-2.5 rounded-lg border border-gray-200"
                   >
                     {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Casa Solar</label>
+                  <select
+                    name="casaSolar"
+                    defaultValue={editingProfile.casaSolar || ''}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {HOUSES.map(house => <option key={house} value={house}>{house}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Casa Karma</label>
+                  <select
+                    name="casaKarma"
+                    defaultValue={editingProfile.casaKarma || ''}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {HOUSES.map(house => <option key={house} value={house}>{house}</option>)}
                   </select>
                 </div>
               </div>

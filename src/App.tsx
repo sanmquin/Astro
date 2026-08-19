@@ -13,6 +13,9 @@ import astroVenus from './data/astro_venus.json';
 import astroInfancia from './data/astro_infancia.json';
 import astroDescendente from './data/astro_descendente.json';
 import astroNodoLunar from './data/astro_nodo_lunar.json';
+import astroCasaSolar from './data/astro_casa_solar.json';
+import astroCasaKarma from './data/astro_casa_karma.json';
+import astroValores from './data/astro_valores.json';
 import { getLectureForScript } from './data/lectures';
 import { Settings as SettingsIcon, Activity, FileText, LayoutDashboard, LogOut } from 'lucide-react';
 
@@ -24,6 +27,9 @@ const SCRIPTS: Record<string, Script> = {
   infancia: astroInfancia as Script,
   descendente: astroDescendente as Script,
   nodo_lunar: astroNodoLunar as Script,
+  casa_solar: astroCasaSolar as Script,
+  casa_karma: astroCasaKarma as Script,
+  valores: astroValores as Script,
 };
 
 const isScriptHistoryCompleted = (scriptId: string, history: { stepId: string }[] | undefined) => {
@@ -49,6 +55,15 @@ const isScriptHistoryCompleted = (scriptId: string, history: { stepId: string }[
   }
   if (scriptId === 'nodo_lunar') {
     return history.some(h => h.stepId === '[9] Siguiente leccion');
+  }
+  if (scriptId === 'casa_solar') {
+    return history.some(h => h.stepId === '[9] Siguiente paso');
+  }
+  if (scriptId === 'casa_karma') {
+    return history.some(h => h.stepId === '[10] Siguiente paso');
+  }
+  if (scriptId === 'valores') {
+    return history.some(h => h.stepId === '[10] Siguiente paso');
   }
   return false;
 };
@@ -93,7 +108,7 @@ function App() {
         const records = await response.json();
         if (Array.isArray(records)) {
           const apiCompleted: Record<string, boolean> = {};
-          const sequence = ['introduccion', 'identidad', 'emociones', 'venus', 'infancia', 'descendente', 'nodo_lunar'];
+          const sequence = ['introduccion', 'identidad', 'emociones', 'venus', 'infancia', 'descendente', 'nodo_lunar', 'casa_solar', 'casa_karma', 'valores'];
           sequence.forEach(id => {
             const record = records.find(r => r.scriptId === id);
             if (record && record.history) {
@@ -201,7 +216,7 @@ function App() {
   };
 
   const handleProceedNext = () => {
-    const sequence = ['introduccion', 'identidad', 'emociones', 'venus', 'infancia', 'descendente', 'nodo_lunar'];
+    const sequence = ['introduccion', 'identidad', 'emociones', 'venus', 'infancia', 'descendente', 'nodo_lunar', 'casa_solar', 'casa_karma', 'valores'];
     const currentIndex = sequence.indexOf(scriptId);
     if (currentIndex !== -1 && currentIndex < sequence.length - 1) {
       const nextId = sequence[currentIndex + 1];
@@ -275,6 +290,9 @@ function App() {
               <option value="infancia" disabled={!isAdminUser(currentUser) && !completedScripts['venus']}>Astro: Infancia</option>
               <option value="descendente" disabled={!isAdminUser(currentUser) && !completedScripts['infancia']}>Astro: Descendente</option>
               <option value="nodo_lunar" disabled={!isAdminUser(currentUser) && !completedScripts['descendente']}>Astro: Nodo Lunar</option>
+              <option value="casa_solar" disabled={!isAdminUser(currentUser) && !completedScripts['nodo_lunar']}>Astro: Casa Solar</option>
+              <option value="casa_karma" disabled={!isAdminUser(currentUser) && !completedScripts['casa_solar']}>Astro: Casa Karma</option>
+              <option value="valores" disabled={!isAdminUser(currentUser) && !completedScripts['casa_karma']}>Astro: Valores</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
@@ -342,7 +360,7 @@ function App() {
               });
             }}
             onReset={handleReset}
-            onProceedNext={scriptId !== 'nodo_lunar' ? handleProceedNext : undefined}
+            onProceedNext={scriptId !== 'valores' ? handleProceedNext : undefined}
           />
         )}
       </main>
