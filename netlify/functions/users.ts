@@ -30,7 +30,15 @@ export const handler = async (event: { httpMethod: string; body: string; querySt
 
   if (event.httpMethod === 'POST') {
     const userData = JSON.parse(event.body);
-    if (!userData.username || !userData.sunSign || !userData.moonSign || !userData.venusSign) {
+    if (
+      !userData.username ||
+      !userData.sunSign ||
+      !userData.moonSign ||
+      !userData.venusSign ||
+      !userData.casaCuatroSign ||
+      !userData.descendenteSign ||
+      !userData.nodoLunarSign
+    ) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Missing required fields' }),

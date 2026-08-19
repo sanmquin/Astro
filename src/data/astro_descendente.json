@@ -1,0 +1,59 @@
+{
+  "initialStepId": "[1] Inicio",
+  "steps": [
+    {
+      "id": "[1] Inicio",
+      "prompt": "¿Cómo inició la relación?",
+      "requirement": "El usuario debe relatar cómo comenzó su relación de pareja.",
+      "nextStepId": "[2] Dinámica"
+    },
+    {
+      "id": "[2] Dinámica",
+      "prompt": "¿Cómo se llevan? ¿Cuál es la dinámica de la relación?",
+      "requirement": "El usuario debe describir la dinámica y convivencia en su relación.",
+      "nextStepId": "[3] Pareja"
+    },
+    {
+      "id": "[3] Pareja",
+      "prompt": "¿Cómo describirías a tu pareja?",
+      "requirement": "El usuario debe describir la personalidad y características de su pareja.",
+      "nextStepId": "[4] Autodescripción"
+    },
+    {
+      "id": "[4] Autodescripción",
+      "prompt": "¿Cómo eres tú como pareja? ¿Cómo te describirías?",
+      "requirement": "El usuario debe describir cómo se comporta como pareja.",
+      "nextStepId": "[5] Expectativas"
+    },
+    {
+      "id": "[5] Expectativas",
+      "prompt": "¿Qué expectativas tienes de tu pareja? ¿Qué cambiarías de tu pareja?",
+      "requirement": "El usuario debe expresar sus expectativas y cambios deseados en su pareja.",
+      "nextStepId": "[6] Conflictos"
+    },
+    {
+      "id": "[6] Conflictos",
+      "prompt": "¿Cuáles son las causas de los conflictos o problemas en la relación?",
+      "requirement": "El usuario debe identificar las causas principales de conflicto en la relación.",
+      "nextStepId": "[7] Defectos"
+    },
+    {
+      "id": "[7] Defectos",
+      "prompt": "¿Cuáles de los defectos de tus tendencias muestras en tu relación?",
+      "requirement": "El usuario debe reconocer qué defectos de sus tendencias manifiesta en la relación.",
+      "nextStepId": "[8] Recomendaciones"
+    },
+    {
+      "id": "[8] Recomendaciones",
+      "prompt": "¿Cuáles de las características “recomendadas” de tu relación crees que te hacen falta?",
+      "requirement": "El usuario debe identificar qué características recomendadas le faltan desarrollar.",
+      "nextStepId": "[9] Siguiente paso"
+    },
+    {
+      "id": "[9] Siguiente paso",
+      "prompt": "¡Felicidades! Vas por muy buen camino. A continuación hablaremos sobre tu nodo lunar.",
+      "requirement": "Final de descendente.",
+      "nextStepId": null
+    }
+  ]
+}

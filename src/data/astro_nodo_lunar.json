@@ -1,0 +1,59 @@
+{
+  "initialStepId": "[1] Experiencias",
+  "steps": [
+    {
+      "id": "[1] Experiencias",
+      "prompt": "¿Cuáles son las experiencias más difíciles que te ha tocado enfrentar?",
+      "requirement": "El usuario debe compartir sus experiencias más difíciles.",
+      "nextStepId": "[2] Causas"
+    },
+    {
+      "id": "[2] Causas",
+      "prompt": "¿Cuáles fueron las causas de esas dificultades? ¿Cómo se relacionan con tu karma?",
+      "requirement": "El usuario debe relacionar las causas de sus dificultades con su karma.",
+      "nextStepId": "[3] Lecciones"
+    },
+    {
+      "id": "[3] Lecciones",
+      "prompt": "¿Qué lecciones aprendiste de esas dificultades? ¿Cómo te hicieron cambiar?",
+      "requirement": "El usuario debe explicar las lecciones aprendidas y cómo cambió.",
+      "nextStepId": "[4] Tendencias Kármicas"
+    },
+    {
+      "id": "[4] Tendencias Kármicas",
+      "prompt": "¿Cómo se reflejan tus tendencias kármicas en la relación de pareja?",
+      "requirement": "El usuario debe analizar cómo se manifiestan sus tendencias kármicas en pareja.",
+      "nextStepId": "[5] Futuro"
+    },
+    {
+      "id": "[5] Futuro",
+      "prompt": "¿Te ves dentro de 5 años con tu pareja actual?",
+      "requirement": "El usuario debe responder si se visualiza con su pareja en 5 años.",
+      "nextStepId": "[6] Separaciones"
+    },
+    {
+      "id": "[6] Separaciones",
+      "prompt": "¿Se han separado? ¿Cuándo y cómo fue la última vez que ocurrió?",
+      "requirement": "El usuario debe indicar si han tenido separaciones y cómo fueron.",
+      "nextStepId": "[7] Resentimiento"
+    },
+    {
+      "id": "[7] Resentimiento",
+      "prompt": "¿Cuál es el mayor resentimiento que le tienes a tu pareja?",
+      "requirement": "El usuario debe reflexionar sobre el mayor resentimiento hacia su pareja.",
+      "nextStepId": "[8] Cualidades a Desarrollar"
+    },
+    {
+      "id": "[8] Cualidades a Desarrollar",
+      "prompt": "¿Qué cualidades crees que tengas que desarrollar para balancear tus tendencias kármicas?",
+      "requirement": "El usuario debe identificar cualidades a desarrollar para equilibrar su karma.",
+      "nextStepId": "[9] Siguiente leccion"
+    },
+    {
+      "id": "[9] Siguiente leccion",
+      "prompt": "¡Felicidades! Has terminado la segunda lección.",
+      "requirement": "Final de nodo lunar y de la segunda lección.",
+      "nextStepId": null
+    }
+  ]
+}

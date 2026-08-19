@@ -4,6 +4,9 @@ import astroIntroduccion from '../data/astro_introduccion.json';
 import astroIdentidad from '../data/astro_identidad.json';
 import astroEmociones from '../data/astro_emociones.json';
 import astroVenus from '../data/astro_venus.json';
+import astroInfancia from '../data/astro_infancia.json';
+import astroDescendente from '../data/astro_descendente.json';
+import astroNodoLunar from '../data/astro_nodo_lunar.json';
 import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save, RefreshCw } from 'lucide-react';
 import { SIGNS } from '../utils/constants';
 
@@ -14,6 +17,9 @@ const SCRIPTS: Record<string, Script> = {
   identidad: astroIdentidad as Script,
   emociones: astroEmociones as Script,
   venus: astroVenus as Script,
+  infancia: astroInfancia as Script,
+  descendente: astroDescendente as Script,
+  nodo_lunar: astroNodoLunar as Script,
 };
 
 const SCRIPT_LABELS: Record<string, string> = {
@@ -21,6 +27,9 @@ const SCRIPT_LABELS: Record<string, string> = {
   identidad: 'Identidad',
   emociones: 'Emociones',
   venus: 'Venus',
+  infancia: 'Infancia',
+  descendente: 'Descendente',
+  nodo_lunar: 'Nodo Lunar',
 };
 
 interface AdminInterfaceProps {
@@ -34,6 +43,7 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
   const [view, setView] = useState<View>(isRestricted ? 'create-user' : 'students');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
+  const [editingProfile, setEditingProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -136,6 +146,10 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     sunSign: formData.get('sunSign') as string,
                     moonSign: formData.get('moonSign') as string,
                     venusSign: formData.get('venusSign') as string,
+                    casaCuatroSign: formData.get('casaCuatroSign') as string,
+                    descendenteSign: formData.get('descendenteSign') as string,
+                    nodoLunarSign: formData.get('nodoLunarSign') as string,
+                    isAdmin: formData.get('isAdmin') === 'on',
                   };
 
                   try {
@@ -186,6 +200,42 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     </select>
                   </div>
                   <div className="space-y-2">
+                    <label htmlFor="casaCuatroSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Casa Cuatro</label>
+                    <select
+                      id="casaCuatroSign"
+                      name="casaCuatroSign"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="descendenteSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Descendente</label>
+                    <select
+                      id="descendenteSign"
+                      name="descendenteSign"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="nodoLunarSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Nodo Lunar</label>
+                    <select
+                      id="nodoLunarSign"
+                      name="nodoLunarSign"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
                     <label htmlFor="moonSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Signo Lunar</label>
                     <select
                       id="moonSign"
@@ -209,6 +259,18 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                       {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
                     </select>
                   </div>
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <input
+                    type="checkbox"
+                    id="isAdmin"
+                    name="isAdmin"
+                    className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  <label htmlFor="isAdmin" className="text-sm font-medium text-gray-700 cursor-pointer">
+                    ¿Es Administrador?
+                  </label>
                 </div>
 
                 <button
@@ -280,6 +342,9 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                               <div className="font-bold text-gray-800">{profile.username}</div>
                               <div className="text-xs text-gray-400">
                                 ☉ {profile.sunSign} • ☾ {profile.moonSign} • ♀ {profile.venusSign}
+                                {profile.casaCuatroSign && ` • 🏠 ${profile.casaCuatroSign}`}
+                                {profile.descendenteSign && ` • ☍ ${profile.descendenteSign}`}
+                                {profile.nodoLunarSign && ` • ☊ ${profile.nodoLunarSign}`}
                               </div>
                             </div>
                           </td>
@@ -297,6 +362,13 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                           </td>
                           <td className="py-4 px-4 text-right">
                             <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => setEditingProfile(profile)}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors text-sm font-medium"
+                              >
+                                <Save size={16} />
+                                Editar
+                              </button>
                               <button
                                 onClick={() => {
                                   setSelectedUserId(userId);
@@ -508,6 +580,150 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
           )}
         </div>
       </div>
+
+      {editingProfile && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-xl w-full space-y-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold text-gray-800">
+              Editar Perfil: {editingProfile.username}
+            </h3>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const updatedData = {
+                  username: editingProfile.username,
+                  sunSign: formData.get('sunSign') as string,
+                  moonSign: formData.get('moonSign') as string,
+                  venusSign: formData.get('venusSign') as string,
+                  casaCuatroSign: formData.get('casaCuatroSign') as string,
+                  descendenteSign: formData.get('descendenteSign') as string,
+                  nodoLunarSign: formData.get('nodoLunarSign') as string,
+                  isAdmin: formData.get('isAdmin') === 'on',
+                };
+
+                try {
+                  const res = await fetch('/.netlify/functions/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData),
+                  });
+                  if (res.ok) {
+                    alert('Perfil actualizado con éxito');
+                    setEditingProfile(null);
+                    const refreshRes = await fetch('/.netlify/functions/users');
+                    if (refreshRes.ok) setProfiles(await refreshRes.json());
+                  } else {
+                    alert('Error al actualizar perfil');
+                  }
+                } catch (err) {
+                  console.error('Failed to update profile', err);
+                  alert('Error al actualizar perfil');
+                }
+              }}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Signo Solar</label>
+                  <select
+                    name="sunSign"
+                    defaultValue={editingProfile.sunSign}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Signo Lunar</label>
+                  <select
+                    name="moonSign"
+                    defaultValue={editingProfile.moonSign}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Signo Venus</label>
+                  <select
+                    name="venusSign"
+                    defaultValue={editingProfile.venusSign}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Casa Cuatro</label>
+                  <select
+                    name="casaCuatroSign"
+                    defaultValue={editingProfile.casaCuatroSign || ''}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Descendente</label>
+                  <select
+                    name="descendenteSign"
+                    defaultValue={editingProfile.descendenteSign || ''}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Nodo Lunar</label>
+                  <select
+                    name="nodoLunarSign"
+                    defaultValue={editingProfile.nodoLunarSign || ''}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <input
+                  type="checkbox"
+                  id="editIsAdmin"
+                  name="isAdmin"
+                  defaultChecked={editingProfile.isAdmin}
+                  className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                />
+                <label htmlFor="editIsAdmin" className="text-sm font-medium text-gray-700 cursor-pointer">
+                  ¿Es Administrador?
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setEditingProfile(null)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
