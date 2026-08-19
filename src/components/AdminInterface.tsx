@@ -4,8 +4,11 @@ import astroIntroduccion from '../data/astro_introduccion.json';
 import astroIdentidad from '../data/astro_identidad.json';
 import astroEmociones from '../data/astro_emociones.json';
 import astroVenus from '../data/astro_venus.json';
+import astroCasaSolar from '../data/astro_casa_solar.json';
+import astroCasaKarma from '../data/astro_casa_karma.json';
+import astroValores from '../data/astro_valores.json';
 import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save, RefreshCw } from 'lucide-react';
-import { SIGNS } from '../utils/constants';
+import { SIGNS, HOUSES } from '../utils/constants';
 
 type View = 'students' | 'student-detail' | 'module-detail' | 'create-user';
 
@@ -14,6 +17,9 @@ const SCRIPTS: Record<string, Script> = {
   identidad: astroIdentidad as Script,
   emociones: astroEmociones as Script,
   venus: astroVenus as Script,
+  casa_solar: astroCasaSolar as Script,
+  casa_karma: astroCasaKarma as Script,
+  valores: astroValores as Script,
 };
 
 const SCRIPT_LABELS: Record<string, string> = {
@@ -21,6 +27,9 @@ const SCRIPT_LABELS: Record<string, string> = {
   identidad: 'Identidad',
   emociones: 'Emociones',
   venus: 'Venus',
+  casa_solar: 'Casa Solar',
+  casa_karma: 'Casa Karma',
+  valores: 'Valores',
 };
 
 interface AdminInterfaceProps {
@@ -136,6 +145,8 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     sunSign: formData.get('sunSign') as string,
                     moonSign: formData.get('moonSign') as string,
                     venusSign: formData.get('venusSign') as string,
+                    casaSolar: formData.get('casaSolar') as string,
+                    casaKarma: formData.get('casaKarma') as string,
                   };
 
                   try {
@@ -211,6 +222,31 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label htmlFor="casaSolar" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Casa Solar</label>
+                    <select
+                      id="casaSolar"
+                      name="casaSolar"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {HOUSES.map(house => <option key={house} value={house}>{house}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="casaKarma" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Casa del Karma</label>
+                    <select
+                      id="casaKarma"
+                      name="casaKarma"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {HOUSES.map(house => <option key={house} value={house}>{house}</option>)}
+                    </select>
+                  </div>
+                </div>
+
                 <button
                   type="submit"
                   className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2"
@@ -280,6 +316,8 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                               <div className="font-bold text-gray-800">{profile.username}</div>
                               <div className="text-xs text-gray-400">
                                 ☉ {profile.sunSign} • ☾ {profile.moonSign} • ♀ {profile.venusSign}
+                                {profile.casaSolar ? ` • ☉ ${profile.casaSolar}` : ''}
+                                {profile.casaKarma ? ` • ☸ ${profile.casaKarma}` : ''}
                               </div>
                             </div>
                           </td>
