@@ -1,0 +1,65 @@
+{
+  "initialStepId": "[1] Forma de amar",
+  "steps": [
+    {
+      "id": "[1] Forma de amar",
+      "prompt": "¿Cómo es tu forma de amar? ¿Cómo expresas cariño y amor?",
+      "requirement": "El usuario debe describir su forma de amar y expresar cariño.",
+      "nextStepId": "[2] Reacción de pareja"
+    },
+    {
+      "id": "[2] Reacción de pareja",
+      "prompt": "¿Cómo reacciona tu pareja al demostrar amor?",
+      "requirement": "El usuario debe explicar la reacción de su pareja cuando demuestra amor.",
+      "nextStepId": "[3] Áreas de mejora"
+    },
+    {
+      "id": "[3] Áreas de mejora",
+      "prompt": "¿Crees que puedes mejorar tu forma de amar? ¿Cómo?",
+      "requirement": "El usuario debe reflexionar sobre cómo puede mejorar su forma de amar.",
+      "nextStepId": "[4] Valores de la relación"
+    },
+    {
+      "id": "[4] Valores de la relación",
+      "prompt": "¿Cuáles son los valores sobre los que se sostiene la relación?",
+      "requirement": "El usuario debe identificar los valores fundamentales de su relación.",
+      "nextStepId": "[5] Valores compartidos"
+    },
+    {
+      "id": "[5] Valores compartidos",
+      "prompt": "¿Tu pareja comparte esos valores? ¿Cuáles son diferentes?",
+      "requirement": "El usuario debe comparar sus valores con los de su pareja e identificar diferencias.",
+      "nextStepId": "[6] Superación de dificultades"
+    },
+    {
+      "id": "[6] Superación de dificultades",
+      "prompt": "¿Cómo vencen las dificultades que surgen en la relación de pareja?",
+      "requirement": "El usuario debe describir cómo superan juntos los problemas en la pareja.",
+      "nextStepId": "[7] Valores por desarrollar"
+    },
+    {
+      "id": "[7] Valores por desarrollar",
+      "prompt": "¿Qué valores crees que todavía necesitan desarrollar para fortalecer la relación?",
+      "requirement": "El usuario debe señalar qué valores requieren desarrollar para fortalecer su vínculo.",
+      "nextStepId": "[8] Visión a 5 años"
+    },
+    {
+      "id": "[8] Visión a 5 años",
+      "prompt": "¿En dónde te gustaría estar en 5 años?",
+      "requirement": "El usuario debe proyectar dónde le gustaría estar dentro de 5 años.",
+      "nextStepId": "[9] Pareja en 5 años"
+    },
+    {
+      "id": "[9] Pareja en 5 años",
+      "prompt": "¿Ves a tu pareja en ese plan de 5 años?",
+      "requirement": "El usuario debe responder si incluye a su pareja en su visión a 5 años.",
+      "nextStepId": "[10] Siguiente paso"
+    },
+    {
+      "id": "[10] Siguiente paso",
+      "prompt": "¡Felicidades! Has completado el curso de astrología de Casa Siete.",
+      "requirement": "Final del módulo de valores y del curso.",
+      "nextStepId": null
+    }
+  ]
+}

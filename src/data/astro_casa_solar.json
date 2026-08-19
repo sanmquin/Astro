@@ -1,0 +1,59 @@
+{
+  "initialStepId": "[1] Área que brillas",
+  "steps": [
+    {
+      "id": "[1] Área que brillas",
+      "prompt": "¿Cuál es el área de tu vida en la que más brillas, en la que más eres feliz?",
+      "requirement": "El usuario debe identificar el área de su vida donde más brilla y es más feliz.",
+      "nextStepId": "[2] Cualidades"
+    },
+    {
+      "id": "[2] Cualidades",
+      "prompt": "¿Cuáles son las cualidades que te hacen brillar en esa área específica?",
+      "requirement": "El usuario debe mencionar las cualidades que le permiten brillar en esa área.",
+      "nextStepId": "[3] Diferenciador"
+    },
+    {
+      "id": "[3] Diferenciador",
+      "prompt": "¿Por qué crees que te va mejor en esa área, qué haces diferente y qué tiene de especial?",
+      "requirement": "El usuario debe explicar qué hace diferente y qué hace especial a esa área.",
+      "nextStepId": "[4] Pareja"
+    },
+    {
+      "id": "[4] Pareja",
+      "prompt": "¿Cuál es el rol de tu pareja en esa área, te apoya o no?",
+      "requirement": "El usuario debe reflexionar sobre el apoyo y rol de su pareja en esa área.",
+      "nextStepId": "[5] Valoración"
+    },
+    {
+      "id": "[5] Valoración",
+      "prompt": "Cuando eres feliz en esa área, ¿qué es lo que recibes, qué es lo que valoras?",
+      "requirement": "El usuario debe compartir qué recibe y qué es lo que valora al ser feliz en esa área.",
+      "nextStepId": "[6] Aprendizaje"
+    },
+    {
+      "id": "[6] Aprendizaje",
+      "prompt": "¿Desde cuándo te va bien en esa área, qué es lo que aprendiste que te ayudó?",
+      "requirement": "El usuario debe indicar desde cuándo le va bien y qué aprendizaje le ayudó.",
+      "nextStepId": "[7] Impacto diario"
+    },
+    {
+      "id": "[7] Impacto diario",
+      "prompt": "¿Cómo impacta esa área especial al resto de tu vida diaria?",
+      "requirement": "El usuario debe analizar el impacto de esa área en su vida cotidiana.",
+      "nextStepId": "[8] Planes o metas"
+    },
+    {
+      "id": "[8] Planes o metas",
+      "prompt": "¿Cuáles son tus planes o metas para esa área especial de tu vida?",
+      "requirement": "El usuario debe describir sus planes y metas para esa área especial.",
+      "nextStepId": "[9] Siguiente paso"
+    },
+    {
+      "id": "[9] Siguiente paso",
+      "prompt": "¡Felicidades! Vas por muy buen camino. A continuación hablaremos sobre tu Casa del Karma.",
+      "requirement": "Final de Casa Solar.",
+      "nextStepId": null
+    }
+  ]
+}

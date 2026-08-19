@@ -12,3 +12,18 @@ export const SIGNS = [
   'Acuario',
   'Piscis'
 ];
+
+export const HOUSES = [
+  'Casa I',
+  'Casa II',
+  'Casa III',
+  'Casa IV',
+  'Casa V',
+  'Casa VI',
+  'Casa VII',
+  'Casa VIII',
+  'Casa IX',
+  'Casa X',
+  'Casa XI',
+  'Casa XII'
+];

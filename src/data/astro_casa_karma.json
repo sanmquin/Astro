@@ -1,0 +1,65 @@
+{
+  "initialStepId": "[1] Área con mayores dificultades",
+  "steps": [
+    {
+      "id": "[1] Área con mayores dificultades",
+      "prompt": "¿Cuál es el área de tu vida con mayores dificultades?",
+      "requirement": "El usuario debe identificar el área de su vida que le genera mayores dificultades.",
+      "nextStepId": "[2] Causa de problemas"
+    },
+    {
+      "id": "[2] Causa de problemas",
+      "prompt": "¿Cuál es la causa de los problemas en esa área de la vida?",
+      "requirement": "El usuario debe analizar la causa principal de las dificultades en esa área.",
+      "nextStepId": "[3] Comportamiento"
+    },
+    {
+      "id": "[3] Comportamiento",
+      "prompt": "¿Actúas diferente en esa área de la vida? ¿Por qué se te complica?",
+      "requirement": "El usuario debe reflexionar sobre si actúa de forma distinta en esa área y por qué se complica.",
+      "nextStepId": "[4] Tiempo con dificultades"
+    },
+    {
+      "id": "[4] Tiempo con dificultades",
+      "prompt": "¿Desde cuándo has experimentado dificultades en esa área?",
+      "requirement": "El usuario debe indicar desde cuándo experimenta problemas en esa área.",
+      "nextStepId": "[5] Aprendizajes"
+    },
+    {
+      "id": "[5] Aprendizajes",
+      "prompt": "¿Qué has aprendido a través de las dificultades?",
+      "requirement": "El usuario debe explicar las lecciones y aprendizajes obtenidos de las dificultades.",
+      "nextStepId": "[6] Impacto en pareja"
+    },
+    {
+      "id": "[6] Impacto en pareja",
+      "prompt": "¿Cómo afectan esas dificultades tu relación de pareja?",
+      "requirement": "El usuario debe evaluar cómo las dificultades afectan a su relación de pareja.",
+      "nextStepId": "[7] Aprendizaje de pareja"
+    },
+    {
+      "id": "[7] Aprendizaje de pareja",
+      "prompt": "¿Has aprendido algo de tu pareja para sobrellevar esas dificultades? ¿Qué es?",
+      "requirement": "El usuario debe describir si ha aprendido algo de su pareja ante las dificultades.",
+      "nextStepId": "[8] Impacto emocional"
+    },
+    {
+      "id": "[8] Impacto emocional",
+      "prompt": "¿Cómo te afecta emocionalmente cuando las cosas están mal en esa área de la vida?",
+      "requirement": "El usuario debe expresar el impacto emocional que le provocan los problemas en esa área.",
+      "nextStepId": "[9] Plan de mejora"
+    },
+    {
+      "id": "[9] Plan de mejora",
+      "prompt": "¿Cómo planeas mejorar en esa área, qué atributos de tu karma planeas desarrollar?",
+      "requirement": "El usuario debe explicar su plan de mejora y los atributos kármicos a desarrollar.",
+      "nextStepId": "[10] Siguiente paso"
+    },
+    {
+      "id": "[10] Siguiente paso",
+      "prompt": "¡Felicidades! Vas por muy buen camino. A continuación hablaremos sobre tus valores.",
+      "requirement": "Final de Casa del Karma.",
+      "nextStepId": null
+    }
+  ]
+}
