@@ -57,4 +57,6 @@ export type UserProfile = {
   casaSolar?: string;
   casaKarma?: string;
   isAdmin?: boolean;
+  activeSessionId?: string | null;
+  allowedLessons?: ('Intro' | 'Karma' | 'Valores')[];
 };
