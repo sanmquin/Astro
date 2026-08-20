@@ -4,7 +4,7 @@ import AdminInterface from './components/AdminInterface';
 import Settings from './components/Settings';
 import TestModule from './components/TestModule';
 import LoginModal from './components/LoginModal';
-import { loadSettings, getUsername, setUsername as saveUsername, clearUsername } from './utils/storage';
+import { loadSettings, getUsername, setUsername as saveUsername, clearUsername, getSessionId, clearSessionId } from './utils/storage';
 import type { AgentSettings, Script, UserProfile } from './types';
 import astroIntroduccion from './data/astro_introduccion.json';
 import astroIdentidad from './data/astro_identidad.json';
@@ -30,6 +30,29 @@ const SCRIPTS: Record<string, Script> = {
   casa_solar: astroCasaSolar as Script,
   casa_karma: astroCasaKarma as Script,
   valores: astroValores as Script,
+};
+
+const SCRIPT_LESSONS: Record<string, 'Intro' | 'Karma' | 'Valores'> = {
+  introduccion: 'Intro',
+  identidad: 'Intro',
+  emociones: 'Intro',
+  venus: 'Intro',
+  infancia: 'Karma',
+  descendente: 'Karma',
+  nodo_lunar: 'Karma',
+  casa_solar: 'Valores',
+  casa_karma: 'Valores',
+  valores: 'Valores',
+};
+
+const isScriptAllowedForUser = (scriptKey: string, user: UserProfile | 'admin' | null) => {
+  if (!user) return true;
+  if (user === 'admin' || user.isAdmin) return true;
+  const userAllowedLessons = user.allowedLessons && user.allowedLessons.length > 0
+    ? user.allowedLessons
+    : ['Intro'];
+  const lesson = SCRIPT_LESSONS[scriptKey];
+  return userAllowedLessons.includes(lesson);
 };
 
 const isScriptHistoryCompleted = (scriptId: string, history: { stepId: string }[] | undefined) => {
@@ -81,7 +104,7 @@ function App() {
   const [completedScripts, setCompletedScripts] = useState<Record<string, boolean>>({});
 
   const loadUserProgress = async (username: string) => {
-    // 1. Fast path: load from localStorage
+    // 1. Fast path: populate from local cache while waiting for DB response
     const savedCompleted = localStorage.getItem(`completed_scripts_${username}`);
     const savedScriptId = localStorage.getItem(`current_script_id_${username}`);
 
@@ -94,14 +117,15 @@ function App() {
       }
     }
 
-    let initialScriptId = 'introduccion';
     if (savedScriptId && SCRIPTS[savedScriptId]) {
-      initialScriptId = savedScriptId;
+      setScriptId(savedScriptId);
+      setCurrentScript(SCRIPTS[savedScriptId]);
+    } else {
+      setScriptId('introduccion');
+      setCurrentScript(SCRIPTS['introduccion']);
     }
-    setScriptId(initialScriptId);
-    setCurrentScript(SCRIPTS[initialScriptId]);
 
-    // 2. Slow path / sync: load from database
+    // 2. Always sync from DB as canonical source of truth
     try {
       const response = await fetch(`/.netlify/functions/responses?userId=${encodeURIComponent(username)}`);
       if (response.ok) {
@@ -121,27 +145,31 @@ function App() {
           setCompletedScripts(apiCompleted);
           localStorage.setItem(`completed_scripts_${username}`, JSON.stringify(apiCompleted));
 
-          // If the user hasn't explicitly set a script, or if the current script is invalid,
-          // we can default to the furthest uncompleted script in the sequence.
-          if (!savedScriptId) {
-            let furthestScriptId = 'introduccion';
-            for (let i = 0; i < sequence.length; i++) {
-              const currentId = sequence[i];
-              if (apiCompleted[currentId]) {
-                if (i < sequence.length - 1) {
-                  furthestScriptId = sequence[i + 1];
-                } else {
-                  furthestScriptId = currentId;
-                }
+          // Compute furthest active script from DB response
+          let furthestScriptId = 'introduccion';
+          for (let i = 0; i < sequence.length; i++) {
+            const currentId = sequence[i];
+            if (apiCompleted[currentId]) {
+              if (i < sequence.length - 1) {
+                furthestScriptId = sequence[i + 1];
               } else {
                 furthestScriptId = currentId;
-                break;
               }
+            } else {
+              furthestScriptId = currentId;
+              break;
             }
-            setScriptId(furthestScriptId);
-            setCurrentScript(SCRIPTS[furthestScriptId]);
-            localStorage.setItem(`current_script_id_${username}`, furthestScriptId);
           }
+
+          // DB progress determines current active script unless a valid saved script is active
+          // If savedScriptId is missing or points to introduccion while user has advanced further, sync to DB furthestScriptId
+          let activeScriptId = savedScriptId && SCRIPTS[savedScriptId] ? savedScriptId : furthestScriptId;
+          if (!isScriptAllowedForUser(activeScriptId, currentUser)) {
+            activeScriptId = 'introduccion';
+          }
+          setScriptId(activeScriptId);
+          setCurrentScript(SCRIPTS[activeScriptId]);
+          localStorage.setItem(`current_script_id_${username}`, activeScriptId);
         }
       }
     } catch (err) {
@@ -159,13 +187,15 @@ function App() {
           setIsRestrictedAdmin(true);
         } else {
           try {
-            const response = await fetch(`/.netlify/functions/users?username=${encodeURIComponent(username)}`);
+            const sessionId = getSessionId();
+            const response = await fetch(`/.netlify/functions/users?username=${encodeURIComponent(username)}&sessionId=${encodeURIComponent(sessionId)}`);
             if (response.ok) {
               const userData = await response.json();
               setCurrentUser(userData);
               await loadUserProgress(username);
             } else {
               clearUsername();
+              clearSessionId();
             }
           } catch (err) {
             console.error('Failed to restore session', err);
@@ -191,8 +221,22 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const username = currentUser && currentUser !== 'admin' ? currentUser.username : getUsername();
+    const sessionId = getSessionId();
+    if (username && username !== 'admin') {
+      try {
+        await fetch('/.netlify/functions/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'logout', username, sessionId }),
+        });
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
+    }
     clearUsername();
+    clearSessionId();
     setCurrentUser(null);
     setIsAdminOpen(false);
     setIsRestrictedAdmin(false);
@@ -283,16 +327,16 @@ function App() {
               className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
               value={scriptId}
             >
-              <option value="introduccion">Astro: Introducción</option>
-              <option value="identidad" disabled={!isAdminUser(currentUser) && !completedScripts['introduccion']}>Astro: Identidad</option>
-              <option value="emociones" disabled={!isAdminUser(currentUser) && !completedScripts['identidad']}>Astro: Emociones</option>
-              <option value="venus" disabled={!isAdminUser(currentUser) && !completedScripts['emociones']}>Astro: Venus</option>
-              <option value="infancia" disabled={!isAdminUser(currentUser) && !completedScripts['venus']}>Astro: Infancia</option>
-              <option value="descendente" disabled={!isAdminUser(currentUser) && !completedScripts['infancia']}>Astro: Descendente</option>
-              <option value="nodo_lunar" disabled={!isAdminUser(currentUser) && !completedScripts['descendente']}>Astro: Nodo Lunar</option>
-              <option value="casa_solar" disabled={!isAdminUser(currentUser) && !completedScripts['nodo_lunar']}>Astro: Casa Solar</option>
-              <option value="casa_karma" disabled={!isAdminUser(currentUser) && !completedScripts['casa_solar']}>Astro: Casa Karma</option>
-              <option value="valores" disabled={!isAdminUser(currentUser) && !completedScripts['casa_karma']}>Astro: Valores</option>
+              {isScriptAllowedForUser('introduccion', currentUser) && <option value="introduccion">Astro: Introducción</option>}
+              {isScriptAllowedForUser('identidad', currentUser) && <option value="identidad" disabled={!isAdminUser(currentUser) && !completedScripts['introduccion']}>Astro: Identidad</option>}
+              {isScriptAllowedForUser('emociones', currentUser) && <option value="emociones" disabled={!isAdminUser(currentUser) && !completedScripts['identidad']}>Astro: Emociones</option>}
+              {isScriptAllowedForUser('venus', currentUser) && <option value="venus" disabled={!isAdminUser(currentUser) && !completedScripts['emociones']}>Astro: Venus</option>}
+              {isScriptAllowedForUser('infancia', currentUser) && <option value="infancia" disabled={!isAdminUser(currentUser) && !completedScripts['venus']}>Astro: Infancia</option>}
+              {isScriptAllowedForUser('descendente', currentUser) && <option value="descendente" disabled={!isAdminUser(currentUser) && !completedScripts['infancia']}>Astro: Descendente</option>}
+              {isScriptAllowedForUser('nodo_lunar', currentUser) && <option value="nodo_lunar" disabled={!isAdminUser(currentUser) && !completedScripts['descendente']}>Astro: Nodo Lunar</option>}
+              {isScriptAllowedForUser('casa_solar', currentUser) && <option value="casa_solar" disabled={!isAdminUser(currentUser) && !completedScripts['nodo_lunar']}>Astro: Casa Solar</option>}
+              {isScriptAllowedForUser('casa_karma', currentUser) && <option value="casa_karma" disabled={!isAdminUser(currentUser) && !completedScripts['casa_solar']}>Astro: Casa Karma</option>}
+              {isScriptAllowedForUser('valores', currentUser) && <option value="valores" disabled={!isAdminUser(currentUser) && !completedScripts['casa_karma']}>Astro: Valores</option>}
             </select>
           </div>
           <div className="flex items-center gap-2">

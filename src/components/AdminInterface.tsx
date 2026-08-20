@@ -150,6 +150,11 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                 onSubmit={async (e) => {
                   e.preventDefault();
                   const formData = new FormData(e.currentTarget);
+                  const allowedLessons: ('Intro' | 'Karma' | 'Valores')[] = [];
+                  if (formData.get('lesson_intro') === 'on') allowedLessons.push('Intro');
+                  if (formData.get('lesson_karma') === 'on') allowedLessons.push('Karma');
+                  if (formData.get('lesson_valores') === 'on') allowedLessons.push('Valores');
+
                   const data = {
                     username: formData.get('username') as string,
                     sunSign: formData.get('sunSign') as string,
@@ -161,6 +166,7 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     casaSolar: formData.get('casaSolar') as string,
                     casaKarma: formData.get('casaKarma') as string,
                     isAdmin: formData.get('isAdmin') === 'on',
+                    allowedLessons: allowedLessons.length > 0 ? allowedLessons : ['Intro'],
                   };
 
                   try {
@@ -296,6 +302,37 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                   </div>
                 </div>
 
+                <div className="space-y-2 pt-2 border-t border-gray-200">
+                  <label className="text-sm font-bold text-gray-700 uppercase tracking-wider block">Lecciones Permitidas</label>
+                  <div className="flex flex-wrap gap-6 pt-1">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="lesson_intro"
+                        defaultChecked={true}
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      Intro
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="lesson_karma"
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      Karma
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="lesson_valores"
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      Valores
+                    </label>
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-3 pt-2">
                   <input
                     type="checkbox"
@@ -416,29 +453,11 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                                 <User size={16} />
                                 Detalle
                               </button>
+                              {/* Option to reset user progress disabled for now */}
                               <button
-                                onClick={async () => {
-                                  if (window.confirm(`¿Estás seguro de que deseas reiniciar el progreso de ${userId}? Esto eliminará todas sus respuestas.`)) {
-                                    try {
-                                      const response = await fetch(`/.netlify/functions/responses?userId=${encodeURIComponent(userId)}`, {
-                                        method: 'DELETE',
-                                      });
-                                      if (response.ok) {
-                                        setResponses(prev => prev.filter(r => r.userId !== userId));
-                                        localStorage.removeItem(`completed_scripts_${userId}`);
-                                        localStorage.removeItem(`current_script_id_${userId}`);
-                                        alert('Progreso reiniciado exitosamente');
-                                      } else {
-                                        alert('Error al reiniciar el progreso');
-                                      }
-                                    } catch (err) {
-                                      console.error('Failed to reset user progress', err);
-                                      alert('Error al reiniciar el progreso');
-                                    }
-                                  }
-                                }}
-                                className="inline-flex items-center gap-2 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
-                                title="Reiniciar progreso"
+                                disabled
+                                className="inline-flex items-center gap-2 px-3 py-1.5 text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed text-sm font-medium"
+                                title="La opción de reiniciar progreso está deshabilitada temporalmente"
                               >
                                 <RefreshCw size={16} />
                                 Reiniciar
@@ -466,29 +485,11 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     <p className="text-gray-500 font-mono text-sm">{selectedUserId}</p>
                   </div>
                 </div>
+                {/* Option to reset user progress disabled for now */}
                 <button
-                  onClick={async () => {
-                    if (window.confirm(`¿Estás seguro de que deseas reiniciar el progreso de ${selectedUserId}? Esto eliminará todas sus respuestas.`)) {
-                      try {
-                        const response = await fetch(`/.netlify/functions/responses?userId=${encodeURIComponent(selectedUserId)}`, {
-                          method: 'DELETE',
-                        });
-                        if (response.ok) {
-                          setResponses(prev => prev.filter(r => r.userId !== selectedUserId));
-                          localStorage.removeItem(`completed_scripts_${selectedUserId}`);
-                          localStorage.removeItem(`current_script_id_${selectedUserId}`);
-                          alert('Progreso reiniciado exitosamente');
-                          setView('students');
-                        } else {
-                          alert('Error al reiniciar el progreso');
-                        }
-                      } catch (err) {
-                        console.error('Failed to reset user progress', err);
-                        alert('Error al reiniciar el progreso');
-                      }
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium shadow-md shadow-red-100"
+                  disabled
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-400 cursor-not-allowed rounded-lg transition-colors text-sm font-medium"
+                  title="La opción de reiniciar progreso está deshabilitada temporalmente"
                 >
                   <RefreshCw size={16} />
                   Reiniciar Progreso
@@ -628,6 +629,11 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
               onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
+                const allowedLessons: ('Intro' | 'Karma' | 'Valores')[] = [];
+                if (formData.get('edit_lesson_intro') === 'on') allowedLessons.push('Intro');
+                if (formData.get('edit_lesson_karma') === 'on') allowedLessons.push('Karma');
+                if (formData.get('edit_lesson_valores') === 'on') allowedLessons.push('Valores');
+
                 const updatedData = {
                   username: editingProfile.username,
                   sunSign: formData.get('sunSign') as string,
@@ -639,6 +645,7 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                   casaSolar: formData.get('casaSolar') as string,
                   casaKarma: formData.get('casaKarma') as string,
                   isAdmin: formData.get('isAdmin') === 'on',
+                  allowedLessons: allowedLessons.length > 0 ? allowedLessons : ['Intro'],
                 };
 
                 try {
@@ -750,6 +757,39 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                   >
                     {HOUSES.map(house => <option key={house} value={house}>{house}</option>)}
                   </select>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-gray-200">
+                <label className="text-xs font-bold text-gray-700 uppercase block">Lecciones Permitidas</label>
+                <div className="flex flex-wrap gap-6 pt-1">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="edit_lesson_intro"
+                      defaultChecked={!editingProfile.allowedLessons || editingProfile.allowedLessons.includes('Intro')}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    Intro
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="edit_lesson_karma"
+                      defaultChecked={editingProfile.allowedLessons?.includes('Karma')}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    Karma
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="edit_lesson_valores"
+                      defaultChecked={editingProfile.allowedLessons?.includes('Valores')}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    Valores
+                  </label>
                 </div>
               </div>
 
