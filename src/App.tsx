@@ -290,7 +290,7 @@ function App() {
   const isAdminUser = (user: UserProfile | 'admin' | null) => {
     if (!user) return false;
     if (user === 'admin') return true;
-    return Boolean(user.isAdmin);
+    return false
   };
 
   const scriptWithDynamicLecture = useMemo(() => {
