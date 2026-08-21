@@ -10,7 +10,7 @@ import astroNodoLunar from '../data/astro_nodo_lunar.json';
 import astroCasaSolar from '../data/astro_casa_solar.json';
 import astroCasaKarma from '../data/astro_casa_karma.json';
 import astroValores from '../data/astro_valores.json';
-import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save, RefreshCw } from 'lucide-react';
+import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save, RefreshCw, KeyRound } from 'lucide-react';
 import { SIGNS, HOUSES } from '../utils/constants';
 
 type View = 'students' | 'student-detail' | 'module-detail' | 'create-user';
@@ -79,6 +79,30 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
     };
     fetchData();
   }, []);
+
+  const handleResetPassword = async (username: string) => {
+    if (!window.confirm(`¿Estás seguro de restablecer la contraseña para ${username}? El usuario creará una nueva contraseña en su próximo inicio de sesión.`)) {
+      return;
+    }
+    try {
+      const res = await fetch('/.netlify/functions/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset-password', username }),
+      });
+      if (res.ok) {
+        alert(`Contraseña de ${username} restablecida con éxito.`);
+        const refreshRes = await fetch('/.netlify/functions/users');
+        if (refreshRes.ok) setProfiles(await refreshRes.json());
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Error al restablecer contraseña');
+      }
+    } catch (err) {
+      console.error('Failed to reset password', err);
+      alert('Error de conexión al restablecer contraseña');
+    }
+  };
 
   const flattenSteps = (script: Script) => {
     const steps: ScriptStep[] = [];
@@ -435,7 +459,15 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                             </div>
                           </td>
                           <td className="py-4 px-4 text-right">
-                            <div className="flex justify-end gap-2">
+                            <div className="flex justify-end gap-2 flex-wrap">
+                              <button
+                                onClick={() => handleResetPassword(profile.username)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors text-sm font-medium"
+                                title="Restablecer contraseña"
+                              >
+                                <KeyRound size={16} />
+                                Restablecer Contraseña
+                              </button>
                               <button
                                 onClick={() => setEditingProfile(profile)}
                                 className="inline-flex items-center gap-2 px-3 py-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors text-sm font-medium"
@@ -622,9 +654,20 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
       {editingProfile && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 max-w-xl w-full space-y-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-gray-800">
-              Editar Perfil: {editingProfile.username}
-            </h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-bold text-gray-800">
+                Editar Perfil: {editingProfile.username}
+              </h3>
+              <button
+                type="button"
+                onClick={() => handleResetPassword(editingProfile.username)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-bold transition-colors"
+                title="Restablecer contraseña para este usuario"
+              >
+                <KeyRound size={14} />
+                Restablecer Contraseña
+              </button>
+            </div>
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
