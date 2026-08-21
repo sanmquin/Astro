@@ -252,7 +252,11 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
         await new Promise(resolve => setTimeout(resolve, 800));
 
         const newHistoryItem = { stepId: currentStep.id, transcript: userTranscript };
-        setHistory(prev => [...prev, newHistoryItem]);
+        setHistory(prev => {
+          const updated = [...prev, newHistoryItem];
+          saveHistory(updated);
+          return updated;
+        });
 
         let nextStepId: string | null = null;
 
@@ -319,7 +323,9 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
     isEditingResponseRef.current = false;
 
     if (initialHistoryItem) {
-      setHistory([initialHistoryItem]);
+      const newHist = [initialHistoryItem];
+      setHistory(newHist);
+      saveHistory(newHist);
       const lastStep = allSteps.find(s => s.id === initialHistoryItem.stepId);
       if (lastStep) {
         const nextId = getNextStepId(lastStep);
@@ -334,8 +340,19 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
           setStatus('idle');
         }
       }
+    } else if (history.length > 0) {
+      const stepToRun = currentStep || allSteps.find(s => s.id === currentStepId);
+      if (stepToRun && currentStepId !== 'FINISHED') {
+        processStep(stepToRun, sessionSettings);
+      } else {
+        const initialStep = allSteps.find(s => s.id === script.initialStepId);
+        if (initialStep) {
+          processStep(initialStep, sessionSettings);
+        }
+      }
     } else {
       setHistory([]);
+      saveHistory([]);
       setCurrentStepId(script.initialStepId);
       const initialStep = allSteps.find(s => s.id === script.initialStepId);
       if (initialStep) {
@@ -349,6 +366,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
     setStatus('idle');
     setError(null);
     setHistory([]);
+    saveHistory([]);
     setVerificationFeedback(null);
     lastSpokenPromptRef.current = null;
     isEditingResponseRef.current = false;
@@ -390,16 +408,24 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
   };
 
   const updateHistoryTranscript = (stepId: string, newTranscript: string) => {
-    setHistory(prev => prev.map(item =>
-      item.stepId === stepId ? { ...item, transcript: newTranscript } : item
-    ));
+    setHistory(prev => {
+      const updated = prev.map(item =>
+        item.stepId === stepId ? { ...item, transcript: newTranscript } : item
+      );
+      saveHistory(updated);
+      return updated;
+    });
   };
 
   const handleBranchSelection = (branchIndex: number) => {
     if (currentStep && currentStep.branches) {
       const selectedBranch = currentStep.branches[branchIndex];
       const newHistoryItem = { stepId: currentStep.id, transcript: selectedBranch.label };
-      setHistory(prev => [...prev, newHistoryItem]);
+      setHistory(prev => {
+        const updated = [...prev, newHistoryItem];
+        saveHistory(updated);
+        return updated;
+      });
 
       let nextStepId: string | null = null;
       if (selectedBranch.steps && selectedBranch.steps.length > 0) {

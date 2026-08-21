@@ -1,7 +1,7 @@
 import React from 'react';
 import { useVoiceAgent } from '../hooks/useVoiceAgent';
 import type { Script, AgentSettings } from '../types';
-import { Mic, MicOff, RefreshCw, Play, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Pause, Square, ChevronRight, Pencil, Send, FileText } from 'lucide-react';
+import { Mic, MicOff, RefreshCw, Play, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Pause, Square, ChevronRight, Pencil, Send, FileText, BookOpen, X } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -60,7 +60,10 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
   const [historyEditValue, setHistoryEditValue] = React.useState('');
   const [editedTranscript, setEditedTranscript] = React.useState('');
   const [hasPlayedSound, setHasPlayedSound] = React.useState(false);
+  const [isLectureModalOpen, setIsLectureModalOpen] = React.useState(false);
   const previousStatusRef = React.useRef(status);
+
+  const hasLecture = Boolean(script.lecture || (script.lectures && script.lectures.length > 0));
 
   React.useEffect(() => {
     if (status === 'editing' && previousStatusRef.current !== 'editing') {
@@ -231,12 +234,22 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
 
   return (
     <div className="flex flex-col items-center justify-center space-y-8 p-4 max-w-2xl mx-auto w-full">
-      <div className="text-center space-y-4 w-full">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Agente de Voz “Astro”</h1>
-          <p className="text-gray-500">
-            {isFinished ? 'Conversación completada' : 'Sigue el guion para completar el curso'}
-          </p>
+      <div className="space-y-4 w-full">
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-left">
+            <h1 className="text-3xl font-bold text-gray-900">Agente de Voz “Astro”</h1>
+            <p className="text-gray-500">
+              {isFinished ? 'Conversación completada' : 'Sigue el guion para completar el curso'}
+            </p>
+          </div>
+          {hasLecture && (
+            <button
+              onClick={() => setIsLectureModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-xl font-semibold text-sm transition-all flex-shrink-0 shadow-sm"
+            >
+              <BookOpen size={18} /> Ver lectura
+            </button>
+          )}
         </div>
 
         {!isFinished && (
@@ -348,7 +361,12 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
                       </div>
                     </div>
                   ) : null}
-                  {currentStep?.type === 'multiple-choice' && history.length === 0 ? (
+                  {history.length > 0 ? (
+                    <div className="bg-blue-50 text-blue-900 p-4 rounded-xl border border-blue-100 text-center space-y-2">
+                      <p className="font-semibold">Tienes progreso guardado</p>
+                      <p className="text-sm text-blue-700">Paso actual: {currentStepNumber} de {totalSteps}</p>
+                    </div>
+                  ) : currentStep?.type === 'multiple-choice' ? (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <p className="text-xl font-medium text-gray-800 leading-relaxed">
                         {currentStep.prompt}
@@ -626,6 +644,61 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
               <RefreshCw size={14} /> Reiniciar
             </button>
          </div>
+      )}
+
+      {/* Lecture Modal */}
+      {isLectureModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-gray-100 overflow-hidden">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <BookOpen className="text-blue-600" size={22} />
+                Lectura del módulo
+              </h2>
+              <button
+                onClick={() => setIsLectureModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-200/50 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-6">
+              {script.lectures && script.lectures.length > 0 ? (
+                script.lectures.map((item, idx) => (
+                  <div key={idx} className="space-y-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
+                    <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
+                      <FileText className="text-blue-600" size={20} />
+                      {item.title}
+                    </h3>
+                    <div className="prose prose-blue max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {item.content}
+                    </div>
+                  </div>
+                ))
+              ) : script.lecture ? (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
+                    <FileText className="text-blue-600" size={20} />
+                    {script.lecture.title}
+                  </h3>
+                  <div className="prose prose-blue max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {script.lecture.content}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">No hay lectura disponible para este módulo.</p>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+              <button
+                onClick={() => setIsLectureModalOpen(false)}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
+              >
+                Cerrar y continuar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
