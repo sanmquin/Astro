@@ -59,4 +59,5 @@ export type UserProfile = {
   isAdmin?: boolean;
   activeSessionId?: string | null;
   allowedLessons?: ('Intro' | 'Karma' | 'Valores')[];
+  hasPassword?: boolean;
 };
