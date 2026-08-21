@@ -1,0 +1,59 @@
+{
+  "initialStepId": "[1] Infancia",
+  "steps": [
+    {
+      "id": "[1] Infancia",
+      "prompt": "¿Cómo describirías tu infancia?",
+      "requirement": "El usuario debe describir cómo fue su infancia.",
+      "nextStepId": "[2] Padre"
+    },
+    {
+      "id": "[2] Padre",
+      "prompt": "¿Cómo era tu padre, cómo fue su relación?",
+      "requirement": "El usuario debe describir a su padre y su relación con él.",
+      "nextStepId": "[3] Relación con Padre"
+    },
+    {
+      "id": "[3] Relación con Padre",
+      "prompt": "¿Cómo crees que afecta la relación con tu padre tu relación de pareja hoy en día?",
+      "requirement": "El usuario debe reflexionar sobre el impacto de la relación paterna en su pareja actual.",
+      "nextStepId": "[4] Madre"
+    },
+    {
+      "id": "[4] Madre",
+      "prompt": "¿Cómo describirías a tu madre, cómo fue su relación?",
+      "requirement": "El usuario debe describir a su madre y su relación con ella.",
+      "nextStepId": "[5] Amor Materno"
+    },
+    {
+      "id": "[5] Amor Materno",
+      "prompt": "¿Cómo afectó el amor que recibiste de tu madre tu forma de amar?",
+      "requirement": "El usuario debe explicar cómo influyó el amor materno en su propia forma de amar.",
+      "nextStepId": "[6] Relación de Padres"
+    },
+    {
+      "id": "[6] Relación de Padres",
+      "prompt": "¿Cómo fue la relación de tus padres y cómo afecta tu relación?",
+      "requirement": "El usuario debe analizar la relación de sus padres y su impacto en su vida de pareja.",
+      "nextStepId": "[7] Hogar Actual"
+    },
+    {
+      "id": "[7] Hogar Actual",
+      "prompt": "¿Cómo es tu hogar el día de hoy, diferente al que creciste?",
+      "requirement": "El usuario debe comparar su hogar actual con el de su infancia.",
+      "nextStepId": "[8] Trabajo Personal"
+    },
+    {
+      "id": "[8] Trabajo Personal",
+      "prompt": "¿Cuáles crees que son las cosas que tienes que trabajar sobre tu infancia?",
+      "requirement": "El usuario debe identificar aspectos de su infancia que debe trabajar.",
+      "nextStepId": "[9] Siguiente paso"
+    },
+    {
+      "id": "[9] Siguiente paso",
+      "prompt": "¡Felicidades! Vas por muy buen camino. A continuación hablaremos sobre tu descendente.",
+      "requirement": "Final de infancia.",
+      "nextStepId": null
+    }
+  ]
+}

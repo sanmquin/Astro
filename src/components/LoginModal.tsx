@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import type { UserProfile } from '../types';
+import { getSessionId } from '../utils/storage';
 
 interface LoginModalProps {
   onLogin: (user: UserProfile | 'admin') => void;
@@ -24,14 +25,19 @@ export default function LoginModal({ onLogin }: LoginModalProps) {
     setError(null);
 
     try {
-      const response = await fetch(`/.netlify/functions/users?username=${encodeURIComponent(username.trim())}`);
+      const sessionId = getSessionId();
+      const response = await fetch('/.netlify/functions/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', username: username.trim(), sessionId }),
+      });
+
+      const data = await response.json();
+
       if (response.ok) {
-        const userData = await response.json();
-        onLogin(userData);
-      } else if (response.status === 404) {
-        setError('El usuario no existe. Por favor, contacta al administrador para crear tu cuenta.');
+        onLogin(data);
       } else {
-        setError('Ocurrió un error al verificar el usuario.');
+        setError(data.error || 'Ocurrió un error al verificar el usuario.');
       }
     } catch (err) {
       console.error('Login error:', err);

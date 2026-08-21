@@ -4,8 +4,14 @@ import astroIntroduccion from '../data/astro_introduccion.json';
 import astroIdentidad from '../data/astro_identidad.json';
 import astroEmociones from '../data/astro_emociones.json';
 import astroVenus from '../data/astro_venus.json';
+import astroInfancia from '../data/astro_infancia.json';
+import astroDescendente from '../data/astro_descendente.json';
+import astroNodoLunar from '../data/astro_nodo_lunar.json';
+import astroCasaSolar from '../data/astro_casa_solar.json';
+import astroCasaKarma from '../data/astro_casa_karma.json';
+import astroValores from '../data/astro_valores.json';
 import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save, RefreshCw } from 'lucide-react';
-import { SIGNS } from '../utils/constants';
+import { SIGNS, HOUSES } from '../utils/constants';
 
 type View = 'students' | 'student-detail' | 'module-detail' | 'create-user';
 
@@ -14,6 +20,12 @@ const SCRIPTS: Record<string, Script> = {
   identidad: astroIdentidad as Script,
   emociones: astroEmociones as Script,
   venus: astroVenus as Script,
+  infancia: astroInfancia as Script,
+  descendente: astroDescendente as Script,
+  nodo_lunar: astroNodoLunar as Script,
+  casa_solar: astroCasaSolar as Script,
+  casa_karma: astroCasaKarma as Script,
+  valores: astroValores as Script,
 };
 
 const SCRIPT_LABELS: Record<string, string> = {
@@ -21,6 +33,12 @@ const SCRIPT_LABELS: Record<string, string> = {
   identidad: 'Identidad',
   emociones: 'Emociones',
   venus: 'Venus',
+  infancia: 'Infancia',
+  descendente: 'Descendente',
+  nodo_lunar: 'Nodo Lunar',
+  casa_solar: 'Casa Solar',
+  casa_karma: 'Casa Karma',
+  valores: 'Valores',
 };
 
 interface AdminInterfaceProps {
@@ -34,6 +52,7 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
   const [view, setView] = useState<View>(isRestricted ? 'create-user' : 'students');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
+  const [editingProfile, setEditingProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -131,11 +150,23 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                 onSubmit={async (e) => {
                   e.preventDefault();
                   const formData = new FormData(e.currentTarget);
+                  const allowedLessons: ('Intro' | 'Karma' | 'Valores')[] = [];
+                  if (formData.get('lesson_intro') === 'on') allowedLessons.push('Intro');
+                  if (formData.get('lesson_karma') === 'on') allowedLessons.push('Karma');
+                  if (formData.get('lesson_valores') === 'on') allowedLessons.push('Valores');
+
                   const data = {
                     username: formData.get('username') as string,
                     sunSign: formData.get('sunSign') as string,
                     moonSign: formData.get('moonSign') as string,
                     venusSign: formData.get('venusSign') as string,
+                    casaCuatroSign: formData.get('casaCuatroSign') as string,
+                    descendenteSign: formData.get('descendenteSign') as string,
+                    nodoLunarSign: formData.get('nodoLunarSign') as string,
+                    casaSolar: formData.get('casaSolar') as string,
+                    casaKarma: formData.get('casaKarma') as string,
+                    isAdmin: formData.get('isAdmin') === 'on',
+                    allowedLessons: allowedLessons.length > 0 ? allowedLessons : ['Intro'],
                   };
 
                   try {
@@ -186,6 +217,42 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     </select>
                   </div>
                   <div className="space-y-2">
+                    <label htmlFor="casaCuatroSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Casa Cuatro</label>
+                    <select
+                      id="casaCuatroSign"
+                      name="casaCuatroSign"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="descendenteSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Descendente</label>
+                    <select
+                      id="descendenteSign"
+                      name="descendenteSign"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="nodoLunarSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Nodo Lunar</label>
+                    <select
+                      id="nodoLunarSign"
+                      name="nodoLunarSign"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
                     <label htmlFor="moonSign" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Signo Lunar</label>
                     <select
                       id="moonSign"
@@ -209,6 +276,73 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                       {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
                     </select>
                   </div>
+                  <div className="space-y-2">
+                    <label htmlFor="casaSolar" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Casa Solar</label>
+                    <select
+                      id="casaSolar"
+                      name="casaSolar"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {HOUSES.map(house => <option key={house} value={house}>{house}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="casaKarma" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Casa Karma</label>
+                    <select
+                      id="casaKarma"
+                      name="casaKarma"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {HOUSES.map(house => <option key={house} value={house}>{house}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-gray-200">
+                  <label className="text-sm font-bold text-gray-700 uppercase tracking-wider block">Lecciones Permitidas</label>
+                  <div className="flex flex-wrap gap-6 pt-1">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="lesson_intro"
+                        defaultChecked={true}
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      Intro
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="lesson_karma"
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      Karma
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="lesson_valores"
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      Valores
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <input
+                    type="checkbox"
+                    id="isAdmin"
+                    name="isAdmin"
+                    className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  <label htmlFor="isAdmin" className="text-sm font-medium text-gray-700 cursor-pointer">
+                    ¿Es Administrador?
+                  </label>
                 </div>
 
                 <button
@@ -226,7 +360,7 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-800">Estudiantes</h2>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={() => setView('create-user')}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
@@ -280,6 +414,11 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                               <div className="font-bold text-gray-800">{profile.username}</div>
                               <div className="text-xs text-gray-400">
                                 ☉ {profile.sunSign} • ☾ {profile.moonSign} • ♀ {profile.venusSign}
+                                {profile.casaCuatroSign && ` • 🏠 ${profile.casaCuatroSign}`}
+                                {profile.descendenteSign && ` • ☍ ${profile.descendenteSign}`}
+                                {profile.nodoLunarSign && ` • ☊ ${profile.nodoLunarSign}`}
+                                {profile.casaSolar && ` • ☀️ ${profile.casaSolar}`}
+                                {profile.casaKarma && ` • ☯ ${profile.casaKarma}`}
                               </div>
                             </div>
                           </td>
@@ -298,6 +437,13 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                           <td className="py-4 px-4 text-right">
                             <div className="flex justify-end gap-2">
                               <button
+                                onClick={() => setEditingProfile(profile)}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors text-sm font-medium"
+                              >
+                                <Save size={16} />
+                                Editar
+                              </button>
+                              <button
                                 onClick={() => {
                                   setSelectedUserId(userId);
                                   setView('student-detail');
@@ -307,29 +453,11 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                                 <User size={16} />
                                 Detalle
                               </button>
+                              {/* Option to reset user progress disabled for now */}
                               <button
-                                onClick={async () => {
-                                  if (window.confirm(`¿Estás seguro de que deseas reiniciar el progreso de ${userId}? Esto eliminará todas sus respuestas.`)) {
-                                    try {
-                                      const response = await fetch(`/.netlify/functions/responses?userId=${encodeURIComponent(userId)}`, {
-                                        method: 'DELETE',
-                                      });
-                                      if (response.ok) {
-                                        setResponses(prev => prev.filter(r => r.userId !== userId));
-                                        localStorage.removeItem(`completed_scripts_${userId}`);
-                                        localStorage.removeItem(`current_script_id_${userId}`);
-                                        alert('Progreso reiniciado exitosamente');
-                                      } else {
-                                        alert('Error al reiniciar el progreso');
-                                      }
-                                    } catch (err) {
-                                      console.error('Failed to reset user progress', err);
-                                      alert('Error al reiniciar el progreso');
-                                    }
-                                  }
-                                }}
-                                className="inline-flex items-center gap-2 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
-                                title="Reiniciar progreso"
+                                disabled
+                                className="inline-flex items-center gap-2 px-3 py-1.5 text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed text-sm font-medium"
+                                title="La opción de reiniciar progreso está deshabilitada temporalmente"
                               >
                                 <RefreshCw size={16} />
                                 Reiniciar
@@ -357,29 +485,11 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     <p className="text-gray-500 font-mono text-sm">{selectedUserId}</p>
                   </div>
                 </div>
+                {/* Option to reset user progress disabled for now */}
                 <button
-                  onClick={async () => {
-                    if (window.confirm(`¿Estás seguro de que deseas reiniciar el progreso de ${selectedUserId}? Esto eliminará todas sus respuestas.`)) {
-                      try {
-                        const response = await fetch(`/.netlify/functions/responses?userId=${encodeURIComponent(selectedUserId)}`, {
-                          method: 'DELETE',
-                        });
-                        if (response.ok) {
-                          setResponses(prev => prev.filter(r => r.userId !== selectedUserId));
-                          localStorage.removeItem(`completed_scripts_${selectedUserId}`);
-                          localStorage.removeItem(`current_script_id_${selectedUserId}`);
-                          alert('Progreso reiniciado exitosamente');
-                          setView('students');
-                        } else {
-                          alert('Error al reiniciar el progreso');
-                        }
-                      } catch (err) {
-                        console.error('Failed to reset user progress', err);
-                        alert('Error al reiniciar el progreso');
-                      }
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium shadow-md shadow-red-100"
+                  disabled
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-400 cursor-not-allowed rounded-lg transition-colors text-sm font-medium"
+                  title="La opción de reiniciar progreso está deshabilitada temporalmente"
                 >
                   <RefreshCw size={16} />
                   Reiniciar Progreso
@@ -508,6 +618,213 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
           )}
         </div>
       </div>
+
+      {editingProfile && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-xl w-full space-y-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold text-gray-800">
+              Editar Perfil: {editingProfile.username}
+            </h3>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const allowedLessons: ('Intro' | 'Karma' | 'Valores')[] = [];
+                if (formData.get('edit_lesson_intro') === 'on') allowedLessons.push('Intro');
+                if (formData.get('edit_lesson_karma') === 'on') allowedLessons.push('Karma');
+                if (formData.get('edit_lesson_valores') === 'on') allowedLessons.push('Valores');
+
+                const updatedData = {
+                  username: editingProfile.username,
+                  sunSign: formData.get('sunSign') as string,
+                  moonSign: formData.get('moonSign') as string,
+                  venusSign: formData.get('venusSign') as string,
+                  casaCuatroSign: formData.get('casaCuatroSign') as string,
+                  descendenteSign: formData.get('descendenteSign') as string,
+                  nodoLunarSign: formData.get('nodoLunarSign') as string,
+                  casaSolar: formData.get('casaSolar') as string,
+                  casaKarma: formData.get('casaKarma') as string,
+                  isAdmin: formData.get('isAdmin') === 'on',
+                  allowedLessons: allowedLessons.length > 0 ? allowedLessons : ['Intro'],
+                };
+
+                try {
+                  const res = await fetch('/.netlify/functions/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData),
+                  });
+                  if (res.ok) {
+                    alert('Perfil actualizado con éxito');
+                    setEditingProfile(null);
+                    const refreshRes = await fetch('/.netlify/functions/users');
+                    if (refreshRes.ok) setProfiles(await refreshRes.json());
+                  } else {
+                    alert('Error al actualizar perfil');
+                  }
+                } catch (err) {
+                  console.error('Failed to update profile', err);
+                  alert('Error al actualizar perfil');
+                }
+              }}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Signo Solar</label>
+                  <select
+                    name="sunSign"
+                    defaultValue={editingProfile.sunSign}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Signo Lunar</label>
+                  <select
+                    name="moonSign"
+                    defaultValue={editingProfile.moonSign}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Signo Venus</label>
+                  <select
+                    name="venusSign"
+                    defaultValue={editingProfile.venusSign}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Casa Cuatro</label>
+                  <select
+                    name="casaCuatroSign"
+                    defaultValue={editingProfile.casaCuatroSign || ''}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Descendente</label>
+                  <select
+                    name="descendenteSign"
+                    defaultValue={editingProfile.descendenteSign || ''}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Nodo Lunar</label>
+                  <select
+                    name="nodoLunarSign"
+                    defaultValue={editingProfile.nodoLunarSign || ''}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {SIGNS.map(sign => <option key={sign} value={sign}>{sign}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Casa Solar</label>
+                  <select
+                    name="casaSolar"
+                    defaultValue={editingProfile.casaSolar || ''}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {HOUSES.map(house => <option key={house} value={house}>{house}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Casa Karma</label>
+                  <select
+                    name="casaKarma"
+                    defaultValue={editingProfile.casaKarma || ''}
+                    required
+                    className="w-full p-2.5 rounded-lg border border-gray-200"
+                  >
+                    {HOUSES.map(house => <option key={house} value={house}>{house}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-gray-200">
+                <label className="text-xs font-bold text-gray-700 uppercase block">Lecciones Permitidas</label>
+                <div className="flex flex-wrap gap-6 pt-1">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="edit_lesson_intro"
+                      defaultChecked={!editingProfile.allowedLessons || editingProfile.allowedLessons.includes('Intro')}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    Intro
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="edit_lesson_karma"
+                      defaultChecked={editingProfile.allowedLessons?.includes('Karma')}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    Karma
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="edit_lesson_valores"
+                      defaultChecked={editingProfile.allowedLessons?.includes('Valores')}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    Valores
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <input
+                  type="checkbox"
+                  id="editIsAdmin"
+                  name="isAdmin"
+                  defaultChecked={editingProfile.isAdmin}
+                  className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                />
+                <label htmlFor="editIsAdmin" className="text-sm font-medium text-gray-700 cursor-pointer">
+                  ¿Es Administrador?
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setEditingProfile(null)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

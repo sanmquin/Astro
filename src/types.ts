@@ -20,6 +20,10 @@ export type Script = {
     title: string;
     content: string;
   };
+  lectures?: {
+    title: string;
+    content: string;
+  }[];
 }
 
 export type AgentSettings = {
@@ -47,4 +51,12 @@ export type UserProfile = {
   sunSign: string;
   moonSign: string;
   venusSign: string;
+  casaCuatroSign?: string;
+  descendenteSign?: string;
+  nodoLunarSign?: string;
+  casaSolar?: string;
+  casaKarma?: string;
+  isAdmin?: boolean;
+  activeSessionId?: string | null;
+  allowedLessons?: ('Intro' | 'Karma' | 'Valores')[];
 };

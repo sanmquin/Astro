@@ -3,6 +3,7 @@ import type { AgentSettings } from '../types';
 const SETTINGS_KEY = 'agent_settings';
 const USER_ID_KEY = 'agent_user_id';
 const USERNAME_KEY = 'agent_username';
+const SESSION_ID_KEY = 'agent_session_id';
 
 const DEFAULT_SETTINGS: AgentSettings = {
   elevenLabsApiKey: '',
@@ -65,4 +66,21 @@ export const setUsername = (username: string): void => {
 
 export const clearUsername = (): void => {
   localStorage.removeItem(USERNAME_KEY);
+};
+
+export const getSessionId = (): string => {
+  let sessionId = localStorage.getItem(SESSION_ID_KEY);
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem(SESSION_ID_KEY, sessionId);
+  }
+  return sessionId;
+};
+
+export const setSessionId = (sessionId: string): void => {
+  localStorage.setItem(SESSION_ID_KEY, sessionId);
+};
+
+export const clearSessionId = (): void => {
+  localStorage.removeItem(SESSION_ID_KEY);
 };
