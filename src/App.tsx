@@ -45,14 +45,24 @@ const SCRIPT_LESSONS: Record<string, 'Intro' | 'Karma' | 'Valores'> = {
   valores: 'Valores',
 };
 
-const isScriptAllowedForUser = (scriptKey: string, user: UserProfile | 'admin' | null) => {
+const isScriptAllowedForUser = (
+  scriptKey: string,
+  user: UserProfile | 'admin' | null,
+  completedScripts?: Record<string, boolean>
+) => {
   if (!user) return true;
   if (user === 'admin' || user.isAdmin) return true;
   const userAllowedLessons = user.allowedLessons && user.allowedLessons.length > 0
     ? user.allowedLessons
     : ['Intro'];
   const lesson = SCRIPT_LESSONS[scriptKey];
-  return userAllowedLessons.includes(lesson);
+  if (userAllowedLessons.includes(lesson)) return true;
+
+  // Automatically allow access to subsequent lessons if previous lesson was completed
+  if (lesson === 'Karma' && completedScripts?.['venus']) return true;
+  if (lesson === 'Valores' && completedScripts?.['nodo_lunar']) return true;
+
+  return false;
 };
 
 const isScriptHistoryCompleted = (scriptId: string, history: { stepId: string }[] | undefined) => {
@@ -164,7 +174,7 @@ function App() {
           // DB progress determines current active script unless a valid saved script is active
           // If savedScriptId is missing or points to introduccion while user has advanced further, sync to DB furthestScriptId
           let activeScriptId = savedScriptId && SCRIPTS[savedScriptId] ? savedScriptId : furthestScriptId;
-          if (!isScriptAllowedForUser(activeScriptId, currentUser)) {
+          if (!isScriptAllowedForUser(activeScriptId, currentUser, apiCompleted)) {
             activeScriptId = 'introduccion';
           }
           setScriptId(activeScriptId);
@@ -327,16 +337,16 @@ function App() {
               className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none cursor-pointer"
               value={scriptId}
             >
-              {isScriptAllowedForUser('introduccion', currentUser) && <option value="introduccion">Astro: Introducción</option>}
-              {isScriptAllowedForUser('identidad', currentUser) && <option value="identidad" disabled={!isAdminUser(currentUser) && !completedScripts['introduccion']}>Astro: Identidad</option>}
-              {isScriptAllowedForUser('emociones', currentUser) && <option value="emociones" disabled={!isAdminUser(currentUser) && !completedScripts['identidad']}>Astro: Emociones</option>}
-              {isScriptAllowedForUser('venus', currentUser) && <option value="venus" disabled={!isAdminUser(currentUser) && !completedScripts['emociones']}>Astro: Venus</option>}
-              {isScriptAllowedForUser('infancia', currentUser) && <option value="infancia" disabled={!isAdminUser(currentUser) && !completedScripts['venus']}>Astro: Infancia</option>}
-              {isScriptAllowedForUser('descendente', currentUser) && <option value="descendente" disabled={!isAdminUser(currentUser) && !completedScripts['infancia']}>Astro: Descendente</option>}
-              {isScriptAllowedForUser('nodo_lunar', currentUser) && <option value="nodo_lunar" disabled={!isAdminUser(currentUser) && !completedScripts['descendente']}>Astro: Nodo Lunar</option>}
-              {isScriptAllowedForUser('casa_solar', currentUser) && <option value="casa_solar" disabled={!isAdminUser(currentUser) && !completedScripts['nodo_lunar']}>Astro: Casa Solar</option>}
-              {isScriptAllowedForUser('casa_karma', currentUser) && <option value="casa_karma" disabled={!isAdminUser(currentUser) && !completedScripts['casa_solar']}>Astro: Casa Karma</option>}
-              {isScriptAllowedForUser('valores', currentUser) && <option value="valores" disabled={!isAdminUser(currentUser) && !completedScripts['casa_karma']}>Astro: Valores</option>}
+              {isScriptAllowedForUser('introduccion', currentUser, completedScripts) && <option value="introduccion">Astro: Introducción</option>}
+              {isScriptAllowedForUser('identidad', currentUser, completedScripts) && <option value="identidad" disabled={!isAdminUser(currentUser) && !completedScripts['introduccion']}>Astro: Identidad</option>}
+              {isScriptAllowedForUser('emociones', currentUser, completedScripts) && <option value="emociones" disabled={!isAdminUser(currentUser) && !completedScripts['identidad']}>Astro: Emociones</option>}
+              {isScriptAllowedForUser('venus', currentUser, completedScripts) && <option value="venus" disabled={!isAdminUser(currentUser) && !completedScripts['emociones']}>Astro: Venus</option>}
+              {isScriptAllowedForUser('infancia', currentUser, completedScripts) && <option value="infancia" disabled={!isAdminUser(currentUser) && !completedScripts['venus']}>Astro: Infancia</option>}
+              {isScriptAllowedForUser('descendente', currentUser, completedScripts) && <option value="descendente" disabled={!isAdminUser(currentUser) && !completedScripts['infancia']}>Astro: Descendente</option>}
+              {isScriptAllowedForUser('nodo_lunar', currentUser, completedScripts) && <option value="nodo_lunar" disabled={!isAdminUser(currentUser) && !completedScripts['descendente']}>Astro: Nodo Lunar</option>}
+              {isScriptAllowedForUser('casa_solar', currentUser, completedScripts) && <option value="casa_solar" disabled={!isAdminUser(currentUser) && !completedScripts['nodo_lunar']}>Astro: Casa Solar</option>}
+              {isScriptAllowedForUser('casa_karma', currentUser, completedScripts) && <option value="casa_karma" disabled={!isAdminUser(currentUser) && !completedScripts['casa_solar']}>Astro: Casa Karma</option>}
+              {isScriptAllowedForUser('valores', currentUser, completedScripts) && <option value="valores" disabled={!isAdminUser(currentUser) && !completedScripts['casa_karma']}>Astro: Valores</option>}
             </select>
           </div>
           <div className="flex items-center gap-2">
