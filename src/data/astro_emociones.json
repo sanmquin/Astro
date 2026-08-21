@@ -3,13 +3,13 @@
   "steps": [
     {
       "id": "[1] Eventos",
-      "prompt": "¿Cuáles son los eventos que más te afectan?",
+      "prompt": "¿Cuáles son los eventos que más te afectan emocionalmente?",
       "requirement": "El usuario debe identificar los eventos que más le afectan.",
       "nextStepId": "[2] Reacción"
     },
     {
       "id": "[2] Reacción",
-      "prompt": "¿Cómo reaccionas emocionalmente en esos situaciones?",
+      "prompt": "¿Cómo reaccionas emocionalmente en esas situaciones?",
       "requirement": "El usuario debe describir su reacción emocional.",
       "nextStepId": "[3] Necesidades"
     },
@@ -21,25 +21,25 @@
     },
     {
       "id": "[4] Insatisfacción",
-      "prompt": "¿Como te sientes cuando no estás satisfaciendo tus necesidades emocionales?",
+      "prompt": "¿Cómo te sientes cuando no estás satisfaciendo tus necesidades emocionales?",
       "requirement": "El usuario debe describir sus sentimientos ante la insatisfacción emocional.",
       "nextStepId": "[5] Problemas"
     },
     {
       "id": "[5] Problemas",
-      "prompt": "¿Cuales emociones causan mayores problema en tu relación?",
+      "prompt": "¿Cuales emociones causan mayores problemas en tu relación?",
       "requirement": "El usuario debe identificar emociones problemáticas en la relación.",
       "nextStepId": "[6] Mejora"
     },
     {
       "id": "[6] Mejora",
-      "prompt": "¿Cómo te gustaría mejorar?",
+      "prompt": "¿Cómo te gustaría mejorar en el manejo de tus emociones?",
       "requirement": "El usuario debe expresar cómo desea mejorar.",
       "nextStepId": "[7] Siguiente paso"
     },
     {
       "id": "[7] Siguiente paso",
-      "prompt": "!Felicidades! Vas por muy buen camino. A continuación hablaremos sobre tu forma de amar.",
+      "prompt": "¡Felicidades! Vas por muy buen camino. A continuación hablaremos sobre tu forma de amar.",
       "requirement": "Final de emociones.",
       "nextStepId": null
     }
