@@ -62,8 +62,27 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
   const [hasPlayedSound, setHasPlayedSound] = React.useState(false);
   const [isLectureModalOpen, setIsLectureModalOpen] = React.useState(false);
   const previousStatusRef = React.useRef(status);
+  const wasActiveRef = React.useRef(false);
 
   const hasLecture = Boolean(script.lecture || (script.lectures && script.lectures.length > 0));
+
+  const handleOpenLectureModal = () => {
+    if (status !== 'idle' && status !== 'paused') {
+      wasActiveRef.current = true;
+      pauseAgent();
+    } else {
+      wasActiveRef.current = false;
+    }
+    setIsLectureModalOpen(true);
+  };
+
+  const handleCloseLectureModal = () => {
+    setIsLectureModalOpen(false);
+    if (wasActiveRef.current) {
+      wasActiveRef.current = false;
+      resumeAgent();
+    }
+  };
 
   React.useEffect(() => {
     if (status === 'editing' && previousStatusRef.current !== 'editing') {
@@ -244,7 +263,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
           </div>
           {hasLecture && (
             <button
-              onClick={() => setIsLectureModalOpen(true)}
+              onClick={handleOpenLectureModal}
               className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-xl font-semibold text-sm transition-all flex-shrink-0 shadow-sm"
             >
               <BookOpen size={18} /> Ver lectura
@@ -656,7 +675,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
                 Lectura del módulo
               </h2>
               <button
-                onClick={() => setIsLectureModalOpen(false)}
+                onClick={handleCloseLectureModal}
                 className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-200/50 transition-colors"
               >
                 <X size={20} />
@@ -691,7 +710,7 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
             </div>
             <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-end">
               <button
-                onClick={() => setIsLectureModalOpen(false)}
+                onClick={handleCloseLectureModal}
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
               >
                 Cerrar y continuar
