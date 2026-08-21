@@ -3,7 +3,7 @@
   "steps": [
     {
       "id": "[1] Felicidad",
-      "prompt": "¿Para ti qué es la felicidad?",
+      "prompt": "¿Para ti, qué es la felicidad?",
       "requirement": "El usuario debe definir qué es la felicidad.",
       "nextStepId": "[2] Cariño"
     },
@@ -15,31 +15,31 @@
     },
     {
       "id": "[3] Recibir",
-      "prompt": "¿Que muestras de cariño valoras mas?",
+      "prompt": "¿Que muestras de cariño valoras mas de tu pareja?",
       "requirement": "El usuario debe identificar qué muestras de cariño valora más.",
       "nextStepId": "[4] Influencia"
     },
     {
       "id": "[4] Influencia",
-      "prompt": "¿Como influye tu forma de amar en tu relación de pareja?",
+      "prompt": "¿Cómo influye tu forma de amar en tu relación de pareja?",
       "requirement": "El usuario debe reflexionar sobre la influencia de su forma de amar.",
       "nextStepId": "[5] Complicaciones"
     },
     {
       "id": "[5] Complicaciones",
-      "prompt": "¿Que complicaciones trae tu forma de dar y esperar cariño en la relación?",
+      "prompt": "¿Qué complicaciones trae tu forma de dar y esperar cariño en la relación?",
       "requirement": "El usuario debe identificar complicaciones relacionadas con el cariño.",
       "nextStepId": "[6] Dudas"
     },
     {
       "id": "[6] Dudas",
-      "prompt": "Has hecho un excelente trabajo. ¿Tienes alguna duda para Fer o Gaby?",
+      "prompt": "Has hecho un excelente trabajo. ¿Tienes alguna duda para Gaby?",
       "requirement": "El usuario puede expresar dudas o preguntas.",
       "nextStepId": "[7] Siguiente leccion"
     },
     {
       "id": "[7] Siguiente leccion",
-      "prompt": "!Felicidades! Has terminado la primer lección. A continuación hablaremos sobre el karma y tendencias.",
+      "prompt": "¡Felicidades! Has terminado la primer lección. A continuación hablaremos sobre el karma y tendencias.",
       "requirement": "Final de Venus y de la primera lección.",
       "nextStepId": null
     }

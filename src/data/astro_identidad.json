@@ -9,7 +9,7 @@
     },
     {
       "id": "[3] Armonía",
-      "prompt": "¿Cuáles están funcionando para la armonía de la relación?",
+      "prompt": "¿Cuáles de las características están funcionando para la armonía de la relación?",
       "requirement": "El usuario debe explicar qué características ayudan a la armonía de la relación.",
       "nextStepId": "[4] Expresión"
     },
@@ -33,7 +33,7 @@
     },
     {
       "id": "[7] Siguiente paso",
-      "prompt": "!Felicidades! Vas por muy buen camino. A continuación hablaremos sobre tus emociones.",
+      "prompt": "¡Felicidades! Vas por muy buen camino. A continuación hablaremos sobre tus emociones.",
       "requirement": "Final de la identidad.",
       "nextStepId": null
     }

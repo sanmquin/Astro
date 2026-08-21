@@ -63,6 +63,12 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
   const [isLectureModalOpen, setIsLectureModalOpen] = React.useState(false);
   const previousStatusRef = React.useRef(status);
 
+  React.useEffect(() => {
+    if (isLectureModalOpen) {
+      pauseAgent();
+    }
+  }, [isLectureModalOpen, pauseAgent]);
+
   const hasLecture = Boolean(script.lecture || (script.lectures && script.lectures.length > 0));
 
   React.useEffect(() => {
