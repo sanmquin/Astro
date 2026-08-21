@@ -300,7 +300,7 @@ function App() {
   const isAdminUser = (user: UserProfile | 'admin' | null) => {
     if (!user) return false;
     if (user === 'admin') return true;
-    return Boolean(user.isAdmin);
+    return false
   };
 
   const scriptWithDynamicLecture = useMemo(() => {
@@ -350,7 +350,7 @@ function App() {
             </select>
           </div>
           <div className="flex items-center gap-2">
-            {!isRestrictedAdmin && (
+            {!isRestrictedAdmin && isAdminUser(currentUser) && (
               <button
                 onClick={() => setIsAdminOpen(!isAdminOpen)}
                 className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium ${
@@ -391,7 +391,7 @@ function App() {
 
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center">
-        {isAdminOpen ? (
+        {isAdminOpen && isAdminUser(currentUser) ? (
           <AdminInterface isRestricted={isRestrictedAdmin} />
         ) : (
           <AgentInterface
