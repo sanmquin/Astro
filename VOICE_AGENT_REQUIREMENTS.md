@@ -1,161 +1,132 @@
 # Voice Agent Platform — Functional Requirements Document (FRD)
 
-**Document Version:** 1.0.0
+**Document Version:** 1.1.0
 **Author:** Product Management
 **Status:** Approved for Implementation
-**Target Architecture:** Domain-Agnostic Voice Agent Engine
+**Target Architecture:** Domain-Agnostic Voice Agent Engine (MVP-First)
 
 ---
 
 ## 1. Executive Summary & Product Vision
 
 ### 1.1 Overview
-The Voice Agent Platform is an interactive, conversational audio-first agent engine capable of guiding users through structured, multi-step workflows, evaluating user spoken or written responses in real time using Large Language Models (LLMs), executing dynamic branch logic, and persisting progress across multi-session journeys.
+The Voice Agent Platform is an audio-first, interactive conversational engine designed to guide users through structured, step-by-step dialogues. It synthesizes prompt text into spoken audio, captures user vocal responses, records history records in real time, and persists progress across multi-session journeys.
 
-While the initial reference implementation delivers an astrological counseling experience ("Casa Siete / Astro"), the underlying architecture is strictly decoupled into a **Domain-Agnostic Core Voice Engine** and **Injectable Domain Context Modules**.
+While the reference implementation powers an astrological counseling application ("Casa Siete / Astro"), the system architecture is strictly decoupled into a **Domain-Agnostic Voice Engine (MVP)** and **Injectable Domain Content Modules**.
 
-### 1.2 Objectives
-- **Domain Decoupling:** Enable seamless deployment across verticals (e.g., Healthcare Intake, Sales Training, Corporate Onboarding, Educational Tutoring) without code modifications to the core agent engine.
-- **Multimodal Interaction:** Support natural voice dialogue (STT/TTS), visual reading context, interactive widgets (multiple-choice options), hardware validation steps, and manual text editing fallbacks.
-- **Reliable Evaluation & Branching:** Intelligently evaluate whether a user's free-form answer satisfies step criteria and dynamically route the user down appropriate conversational branches.
-- **State Persistence & Resumption:** Maintain deterministic user progress, allowing users to pause, review, edit past answers, and resume seamlessly from any device.
+### 1.2 Core MVP Philosophy
+- **Lightweight & Fast:** Built on native browser APIs (Web Speech STT/TTS) to eliminate external API dependencies for the core voice loop.
+- **Linear & Predictable:** Uses clear, deterministic sequential step flows (`nextStepId`) that make script authoring and implementation simple.
+- **Domain Decoupled:** Can be adapted to any domain (e.g., Healthcare Intake, Sales Training, Onboarding, Tutoring) simply by changing script JSON files and user metadata.
 
 ---
 
-## 2. System Architecture & Core State Machine
+## 2. Voice Agent State Machine
 
-### 2.1 Voice Agent State Machine
-The core voice engine operates as a finite state machine with the following states:
+The core MVP voice engine operates as a straightforward finite state machine:
 
 ```
-                      +-------------------+
-                      |       IDLE        |
-                      +---------+---------+
-                                | (startAgent)
-                                v
-                      +-------------------+
-                      |     SPEAKING      |<-------------+
-                      +---------+---------+              |
-                                |                        | (feedback/repeat)
-                                v                        |
-                      +-------------------+              |
-                      |     LISTENING     |              |
-                      +----+---------+----+              |
-                           |         |                   |
-            (user edits)   |         | (recording stops) |
-     +---------------------+         +-------------+     |
-     |                                             |     |
-     v                                             v     |
-+----+----+                                   +----+-----+----+
-| EDITING |                                   |   VERIFYING   |
-+----+----+                                   +----+-----+----+
-     |                                             |     |
-     | (submit)                                    |     | (failed evaluation)
-     +--------------------->+                      |     +------+
-                            |                      |            |
-                            v                      v            v
-                      +-----+----------------------+--+   +-----+-----+
-                      |       PROCESSING / EVAL       |   | SPEAKING  |
-                      +---------------+---------------+   +-----------+
-                                      |
-                                      | (evaluation success)
-                                      v
-                      +---------------+---------------+
-                      |           VERIFIED            |
-                      +---------------+---------------+
-                                      |
-                                      v
-                      +---------------+---------------+
-                      |        ADVANCE STEP           |
-                      +-------------------------------+
+                  +-------------------+
+                  |       IDLE        |
+                  +---------+---------+
+                            | (startAgent / resume)
+                            v
+                  +-------------------+
+                  |     SPEAKING      |  (TTS plays prompt)
+                  +---------+---------+
+                            |
+                            v
+                  +-------------------+
+                  |     LISTENING     |  (STT records voice input)
+                  +---------+---------+
+                            |
+                            | (user speech captured)
+                            v
+                  +-------------------+
+                  |   ADVANCE STEP    |  (Save transcript -> move to nextStepId)
+                  +-------------------+
 ```
 
-#### Complete State Inventory:
-1. `idle`: Engine is initialized but inactive, waiting for user trigger.
-2. `speaking`: Text-to-Speech (TTS) engine is synthesizing and playing prompt audio.
-3. `listening`: Speech-to-Text (STT) engine is actively listening for user vocal input.
-4. `sound_check`: Hardware test step playing test audio for user volume verification.
-5. `mic_check`: Hardware test step verifying microphone capture capability.
-6. `awaiting_selection`: Paused state requiring user interaction with a UI widget (e.g., multiple choice, branching selector).
-7. `editing`: User is manually modifying transcript text via UI keyboard input.
-8. `verifying`: System is processing transcript through LLM evaluation.
-9. `verified`: Brief confirmation state indicating successful response validation.
-10. `paused`: Agent execution halted by user; audio playback and STT stopped.
-11. `error`: Exception state (network failure, TTS API error, mic permission denied).
+### State Inventory:
+- `idle`: Engine initialized, waiting for user action to start/resume.
+- `speaking`: Native browser TTS (or cloud voice) is playing prompt audio.
+- `listening`: Web Speech API is actively capturing user microphone input.
+- `sound_check`: Hardware check step playing test audio for volume verification.
+- `mic_check`: Hardware check step confirming microphone responsiveness.
+- `awaiting_selection`: Paused state awaiting user interaction on a UI widget (e.g., multiple-choice card).
+- `editing`: (Optional/Advanced) User manually editing transcript text.
+- `paused`: Conversation halted by user; audio and listening stopped.
+- `error`: Exception state (e.g., mic permission denied, audio output error).
 
 ---
 
-## 3. Functional Requirements
+## 3. Categorized Functional Requirements
 
-Features are split into three tiers:
-- **Basic (Core Engine Capabilities)**
-- **Advanced (Interactive & Control Capabilities)**
-- **Domain-Oriented (Domain Abstraction Framework)**
+Requirements are organized into three distinct tiers:
+1. **Basic (MVP Core Engine)** — Essential requirements for a minimal, fully functional voice agent.
+2. **Advanced (Optional Enhancements)** — Powerful capabilities like LLM verification, ElevenLabs, and manual editing.
+3. **Domain-Oriented (Domain Abstraction Framework)** — Rules for adapting the engine across different industries.
 
 ---
 
-### 3.1 Basic Features (Core Engine Capabilities)
+### 3.1 Basic Features (MVP Core Engine Capabilities)
+
+These core features are required for a minimal viable implementation of the voice agent in any domain:
 
 | Requirement ID | Feature Name | Description & Acceptance Criteria | Priority |
 | :--- | :--- | :--- | :--- |
-| **REQ-BASIC-001** | **STT Audio Capture** | The system MUST capture real-time audio from the user's microphone using Web Speech API (or Speech-to-Text provider) and stream live transcription to the UI. Must handle microphone permissions gracefully and provide automatic end-pointing detection. | P0 |
-| **REQ-BASIC-002** | **TTS Audio Synthesis** | The system MUST synthesize step prompt text into natural audio speech. It MUST support Web Speech API (native browser synthesis) and premium cloud TTS providers (e.g., ElevenLabs). Audio output MUST automatically prime on user gesture to comply with browser autoplay policies. | P0 |
-| **REQ-BASIC-003** | **Sequential Script Execution** | The system MUST execute structured scripts composed of sequential steps (`ScriptStep`). Each step MUST define `id`, `prompt`, `requirement`, and `nextStepId`. | P0 |
-| **REQ-BASIC-004** | **Hardware Onboarding (Sound & Mic Check)** | The engine MUST support specialized step types (`sound-check`, `mic-check`) during onboarding. The user must be able to test speaker playback and confirm microphone responsiveness before entering main conversation loops. | P1 |
-| **REQ-BASIC-005** | **LLM Response Verification Engine** | The engine MUST submit the user's speech transcript along with the step's expected `requirement` to an LLM evaluator (e.g., Gemini 3.1 Flash Lite). The LLM determines if the response is valid (`success: true/false`). On invalid responses, the agent speaks contextual feedback and re-prompts the user. | P0 |
-| **REQ-BASIC-006** | **Session State Persistence** | All step responses (`history: { stepId, transcript }[]`) MUST be persisted to backend storage (e.g., REST/Netlify Functions + MongoDB) in real-time. On session re-entry, the engine MUST reload past responses and auto-advance to the uncompleted step. | P0 |
-| **REQ-BASIC-007** | **Basic Agent Control UI** | The frontend UI MUST provide controls for: Start/Pause/Resume, Replay Prompt, Skip Step, Step Progress Indicator (e.g., "Paso 3 de 8"), Live Transcript Display, and Visual Status Badges (e.g., Speaking, Listening, Verifying). | P0 |
+| **REQ-BASIC-001** | **Native Web STT Audio Capture** | The system MUST capture vocal input from the user's microphone using browser-native Web Speech API (`react-speech-recognition`) and display live transcript text on screen. Must handle browser mic permissions gracefully. | P0 (MVP) |
+| **REQ-BASIC-002** | **Native Web TTS Audio Synthesis** | The system MUST synthesize step prompt text into spoken audio using browser-native Web Speech API (`window.speechSynthesis`). Speech MUST prime on initial user gesture (Click/Tap) to respect browser autoplay policies. | P0 (MVP) |
+| **REQ-BASIC-003** | **Linear Sequential Script Execution** | The system MUST execute scripts defined as linear step sequences (`ScriptStep`). Each step contains `id`, `prompt`, `requirement`, and a `nextStepId` pointer. When a step completes, the engine automatically advances to `nextStepId`. | P0 (MVP) |
+| **REQ-BASIC-004** | **Basic Response Capture & Validation** | For MVP, user responses are validated simply by ensuring non-empty speech capture (`transcript.trim().length > 0`). If no audio is detected, the agent speaks a simple retry prompt ("No pude escucharte, ¿podrías repetir?"). | P0 (MVP) |
+| **REQ-BASIC-005** | **Hardware Onboarding Steps** | The engine MUST support hardware validation step types (`sound-check` to test speaker playback, and `mic-check` to confirm microphone responsiveness) prior to starting main conversation modules. | P0 (MVP) |
+| **REQ-BASIC-006** | **Session History Persistence & Resumption** | All completed responses (`history: { stepId, transcript }[]`) MUST be persisted to backend storage (e.g., Netlify Functions + MongoDB or local storage). On re-opening a module, the engine reloads history and resumes at the next uncompleted step. | P0 (MVP) |
+| **REQ-BASIC-007** | **Minimal Agent Control UI** | The frontend UI MUST include basic controls: Start / Pause / Resume, Replay Prompt, Skip Step, Progress Bar / Counter ("Paso X de Y"), Live Transcript Box, and Visual Status Badges (Idle, Speaking, Listening). | P0 (MVP) |
 
 ---
 
-### 3.2 Advanced Features (Interactive & Control Capabilities)
+### 3.2 Advanced Features (Optional Enhancements & Deprecated Logic)
 
-| Requirement ID | Feature Name | Description & Acceptance Criteria | Priority |
+These optional features extend the core MVP with richer interactions, cloud AI services, and administrative controls:
+
+| Requirement ID | Feature Name | Description & Acceptance Criteria | Status / Category |
 | :--- | :--- | :--- | :--- |
-| **REQ-ADV-001** | **Dynamic Multi-Turn Branching** | Steps MAY define conditional branches (`ScriptBranch[]`). The LLM evaluator evaluates free-form input and selects the matching branch index (`selectedBranchIndex`). The engine dynamically routes execution to the first step of the selected branch before returning to the main script flow. | P0 |
-| **REQ-ADV-002** | **Human-in-the-Loop Review & Live Transcript Editing** | Users MUST be able to pause voice recording, switch to `editing` state, manually edit speech transcript text via visual text input, and submit the corrected text for verification. After completing a script, users can access a full "Review Mode" to inspect and edit any past answer. | P1 |
-| **REQ-ADV-003** | **In-Flight Educational Reading Overlays** | Steps MAY be associated with background educational lectures (`lecture` or `lectures`). The UI MUST provide a "View Reading" modal. Opening the modal pauses active TTS/STT; closing it resumes interaction. | P1 |
-| **REQ-ADV-004** | **Multimodal Input Support** | The engine MUST support structured non-voice input types, such as `multiple-choice` cards. When encountered, TTS auto-playback is suppressed, and the UI displays interactive option cards for explicit user selection. | P1 |
-| **REQ-ADV-005** | **Provider Fallback & Settings Customization** | Users/Admins MUST be able to customize agent settings (ElevenLabs API Key, Voice ID, Toggle Gemini Verification, Max Listening Duration). If cloud TTS fails (e.g., rate limit or network failure), the engine MUST automatically fall back to Web Speech API without crashing. | P1 |
-| **REQ-ADV-006** | **Administrative Dashboard & Profile Governance** | Admins MUST have an Admin Dashboard providing: User Creation/Editing, Password Reset, Module Access Management (`allowedLessons`), Session Data Audit, and CSV/JSON Response History Export. | P1 |
-| **REQ-ADV-007** | **Secure Authentication & Access Control** | The system MUST support user authentication with salt-hashed passwords (`scrypt`). Admin capabilities MUST be restricted to authorized admin profiles (`isAdmin: true`). Non-admin users can only navigate modules permitted in their `allowedLessons` list. | P1 |
+| **REQ-ADV-001** | **LLM Response Verification (Gemini)** | *Optional Enhancement:* Evaluate free-form user transcripts against semantic step requirements using Google Gemini API (`gemini-3.1-flash-lite`). If response fails criteria, the agent speaks contextual hints and re-prompts the user. *(Currently disabled by default for MVP speed).* | Advanced |
+| **REQ-ADV-002** | **ElevenLabs High-Quality Cloud TTS** | *Optional Enhancement:* Synthesize prompts using premium ElevenLabs voice models. Includes automatic fallback to native Web Speech API if cloud API fails or rate limits. | Advanced |
+| **REQ-ADV-003** | **Human-in-the-Loop Review & Live Edit** | Users can pause listening to manually edit transcript text via keyboard. After completing a script, users enter a "Review Mode" to inspect and edit any past response. | Advanced |
+| **REQ-ADV-004** | **In-Flight Reading Overlays** | Steps can display educational context in a "View Reading" modal overlay. Opening the modal pauses active voice playback/listening; closing it resumes interaction. | Advanced |
+| **REQ-ADV-005** | **Multimodal Selection Cards** | Support `multiple-choice` steps. Auto-speech synthesis is suppressed and visual selection cards are rendered for explicit user choice. | Advanced |
+| **REQ-ADV-006** | **Admin Dashboard & Profile Management** | Comprehensive admin panel for user creation, password resets, lesson access permissions (`allowedLessons`), and student answer audits. | Advanced |
+| **REQ-ADV-007** | **Dynamic Conditional Branching** | *DEPRECATED:* Branching logic routing users down nested decision trees (`ScriptBranch[]`). Deprecated in favor of simpler linear step scripts (`nextStepId`) to reduce complexity and authoring overhead. | Deprecated |
 
 ---
 
 ### 3.3 Domain-Oriented Features (Domain Abstraction Framework)
 
-To reuse this voice agent engine in diverse domains beyond astrology, the architecture abstracts all domain specificities through dynamic context hydration and modular schemas:
+To reuse the voice agent engine across different industries, all domain-specific logic is abstracted through injectable metadata and modular scripts:
 
 | Requirement ID | Feature Name | Description & Acceptance Criteria | Priority |
 | :--- | :--- | :--- | :--- |
-| **REQ-DOM-001** | **Dynamic Context Hydration & Metadata Injection** | The core engine MUST accept a generic `UserProfile` containing key-value metadata. Script templates and lectures MUST support dynamic placeholder substitution (e.g., `{userName}`, `{primaryAttribute}`, `{assignedCohort}`). The engine hydrator injects user metadata into prompts and lecture readings at runtime. | P0 |
-| **REQ-DOM-002** | **Modular Script Taxonomy & Progression Rules** | Scripts MUST be organized into sequential Modules/Lessons. Access control rules MUST support prerequisite locking (e.g., Module 2 is locked until Module 1 is completed), transferable across any learning curriculum. | P1 |
-| **REQ-DOM-003** | **Domain-Specific Verification Rule Customization** | Step requirements MUST support domain-specific evaluation rules (e.g., checking for specific clinical symptoms in Healthcare, sales objection handling compliance in Sales, or grammar correctness in Language Learning). Prompt structures submitted to the LLM must accept domain context wrappers. | P0 |
-| **REQ-DOM-004** | **Domain Knowledge Base Binding** | Reading content (`lecture` / `lectures`) MUST be dynamically selected from a domain knowledge service based on user metadata attributes (e.g., medical diagnosis, sales persona, student skill level). | P1 |
-| **REQ-DOM-005** | **Domain Analytical Export & Audit** | The backend MUST store structured records mapping step IDs to domain key performance indicators (KPIs), enabling domain leads to evaluate completion rates, common failure steps, and user performance analytics. | P2 |
+| **REQ-DOM-001** | **Dynamic Variable Hydration** | The engine MUST accept a generic `UserProfile` containing metadata key-value pairs. Prompts and readings MUST support variable substitution (e.g., `{userName}`, `{department}`, `{userSign}`) at runtime. | P0 (MVP) |
+| **REQ-DOM-002** | **Modular Script Progression** | Content MUST be organized into sequential modules/lessons. Access control rules MUST enforce module completion prerequisites before unlocking subsequent lessons. | P1 |
+| **REQ-DOM-003** | **Domain Knowledge Base Mapping** | Reading content (`lecture` / `lectures`) MUST be dynamically selected from a domain knowledge file or API based on user profile attributes. | P1 |
+| **REQ-DOM-004** | **Domain Analytics & Data Export** | User step responses MUST be exportable (JSON/CSV) for domain lead auditing, compliance verification, or student grading. | P2 |
 
 ---
 
-## 4. Technical Specifications & Data Schemas
+## 4. Technical Specifications & Minimal Schemas
 
-### 4.1 Script Definition Schema (`Script`)
+### 4.1 Script Schema (`Script`) — Simplified MVP
 
 ```typescript
 export type ScriptStepType = 'default' | 'multiple-choice' | 'sound-check' | 'mic-check';
 
-export interface ScriptBranch {
-  label: string;             // Display name or selection label for branch
-  requirement: string;       // Evaluation criteria for matching this branch
-  steps: ScriptStep[];       // Child steps contained within this branch
-}
-
 export interface ScriptStep {
-  id: string;                // Unique step identifier (e.g., "[1] Intro")
-  prompt: string;            // Spoken prompt text synthesized by TTS
-  requirement: string;       // Validation rule evaluated by LLM
-  nextStepId: string | null; // Next sequential step ID (null if final step or branching)
-  type?: ScriptStepType;     // Optional specialized step UI/behavior type
-  branches?: ScriptBranch[]; // Optional array of conditional branch paths
+  id: string;                // Step identifier (e.g., "[1] Intro")
+  prompt: string;            // Text spoken by TTS agent
+  requirement: string;       // Answer criteria (used by LLM if enabled, or doc reference)
+  nextStepId: string | null; // ID of next sequential step (null if final step)
+  type?: ScriptStepType;     // UI step type wrapper
 }
 
 export interface LectureContent {
@@ -178,21 +149,15 @@ export interface UserProfile {
   username: string;
   isAdmin?: boolean;
   hasPassword?: boolean;
-  activeSessionId?: string | null;
-  allowedLessons?: string[];          // List of allowed module IDs (e.g. ['Intro', 'Module_1'])
+  allowedLessons?: string[];            // Permitted module IDs (e.g., ['Intro', 'Lesson_1'])
 
-  // Generic Domain Attributes Container (Extensible)
+  // Generic Domain Attributes Container
   domainAttributes?: Record<string, string>;
 
-  // Reference Domain Metadata (Astrology Reference Implementation)
+  // Reference Domain Attributes (Astrology Reference Implementation)
   sunSign?: string;
   moonSign?: string;
   venusSign?: string;
-  casaCuatroSign?: string;
-  descendenteSign?: string;
-  nodoLunarSign?: string;
-  casaSolar?: string;
-  casaKarma?: string;
 }
 ```
 
@@ -205,24 +170,8 @@ export interface ResponseRecord {
   history: {
     stepId: string;
     transcript: string;
-    timestamp?: string;
   }[];
   updatedAt: string;
-}
-```
-
-### 4.4 LLM Verification Payload (`EvaluationPayload`)
-
-```typescript
-export interface EvaluationRequest {
-  transcript: string;
-  step: ScriptStep;
-}
-
-export interface EvaluationResponse {
-  success: boolean;
-  feedback?: string;             // Contextual hint spoken back to user on evaluation failure
-  selectedBranchIndex?: number;  // Index of matched ScriptBranch (if step has branches)
 }
 ```
 
@@ -230,169 +179,87 @@ export interface EvaluationResponse {
 
 ## 5. Non-Functional Requirements (NFRs)
 
-### 5.1 Performance & Latency SLAs
-- **TTS Initial Byte Latency (TTFB):** Audio playback MUST start within **< 1.2 seconds** for ElevenLabs cloud API and **< 300 ms** for Web Speech API.
-- **LLM Verification Latency:** Evaluation response from `/evaluate` endpoint MUST complete within **< 2.0 seconds** (P95).
-- **Audio End-Pointing:** Silence detection timeout for STT MUST trigger within **1.5–3.0 seconds** after the user stops speaking.
-
-### 5.2 Browser & Device Compatibility
-- **Desktop Browsers:** Chrome 90+, Edge 90+, Safari 14.1+, Firefox 90+ (Web Speech API or Polyfill).
-- **Mobile Browsers:** iOS Safari 14.5+, Android Chrome 90+.
-- **Hardware Access:** HTTPS MUST be enforced across all environments to permit browser microphone access.
-
-### 5.3 Reliability & Resilience
-- **TTS Failure Fallback:** If cloud TTS endpoint fails, engine MUST seamlessly switch to browser native speech synthesis.
-- **STT Failure Grace Period:** If microphone fails to capture input twice consecutively, the system MUST display text-input fallback modal.
-- **Offline Persistence Cache:** User transcript edits MUST update local state (`localStorage`) immediately before async network sync to prevent data loss.
-
-### 5.4 Security & Data Privacy
-- **Credential Storage:** User passwords MUST be stored as cryptographic hashes (`scrypt` with random 16-byte salt).
-- **API Key Masking:** Cloud API Keys (`GEMINI_API_KEY`, `ELEVENLABS_API_KEY`) MUST remain on serverless backend functions (`netlify/functions`) and NEVER be exposed to browser bundles.
-- **Data Privacy (GDPR/PII):** User voice transcript records MUST be strictly isolated by `userId` and accessible only by authorized admins or the user themselves.
+- **Latency (MVP):** Native Web TTS audio synthesis MUST begin playback within **< 300 ms** of step transition.
+- **Microphone Timeout:** Automatic end-pointing MUST stop recording after **2.5 seconds** of silence.
+- **Security:** API Keys MUST be kept in serverless environment variables. Passwords MUST be hashed (`scrypt`).
+- **Resilience:** Local browser storage (`localStorage`) MUST cache history immediately on response capture to prevent data loss on network disconnect.
 
 ---
 
-## 6. Domain Adaptation Blueprint & Case Studies
+## 6. Multi-Domain Adaptation Blueprint (MVP Case Studies)
 
-This section outlines how to adapt the domain-agnostic engine for three alternative industries.
+To implement this MVP engine in another domain, simply create a domain script JSON and define user metadata attributes.
 
----
+### Case Study 1: Healthcare Patient Intake (MVP)
 
-### Case Study A: Healthcare & Patient Intake Screening
-
-#### Domain Objective
-Guide patients through an interactive medical intake dialogue prior to a clinical consultation, recording symptoms and evaluating urgency.
-
-#### Domain Data Configuration
-- **User Attributes (`UserProfile`):** `patientId`, `age`, `assignedDepartment`, `primaryCondition`.
-- **Knowledge Base Injection:** Clinical guidelines popups, symptom checklists.
-
-#### Sample Script Schema (`patient_intake.json`)
 ```json
 {
-  "initialStepId": "[1] Symptom_Overview",
+  "initialStepId": "[1] Symptom",
   "steps": [
     {
-      "id": "[1] Symptom_Overview",
-      "prompt": "Hello {userName}. I'm your virtual triage assistant. Please describe the primary symptom you are experiencing today.",
-      "requirement": "User must describe a physical or mental health symptom.",
-      "nextStepId": "[2] Duration_Check"
+      "id": "[1] Symptom",
+      "prompt": "Hello {userName}. What is the primary symptom you are experiencing today?",
+      "requirement": "User mentions primary physical symptom.",
+      "nextStepId": "[2] Duration"
     },
     {
-      "id": "[2] Duration_Check",
-      "prompt": "Thank you. How many days have you been experiencing this symptom, and is it constant or intermittent?",
-      "requirement": "User must specify a duration (e.g. days/weeks) and pattern (constant or intermittent).",
-      "nextStepId": "[3] Severity_Branch"
+      "id": "[2] Duration",
+      "prompt": "How many days have you had this symptom?",
+      "requirement": "User specifies duration in days or weeks.",
+      "nextStepId": "[3] Medications"
     },
     {
-      "id": "[3] Severity_Branch",
-      "prompt": "On a scale of 1 to 10, how severe is your pain or discomfort right now?",
-      "requirement": "User must state a severity score from 1 to 10.",
-      "nextStepId": null,
-      "branches": [
-        {
-          "label": "Mild to Moderate (1-6)",
-          "requirement": "Rating between 1 and 6.",
-          "steps": [
-            {
-              "id": "[3a] Standard_Intake",
-              "prompt": "Understood. Please list any current medications you are taking.",
-              "requirement": "User names medications or states they take none.",
-              "nextStepId": "FINISHED"
-            }
-          ]
-        },
-        {
-          "label": "Severe (7-10)",
-          "requirement": "Rating between 7 and 10.",
-          "steps": [
-            {
-              "id": "[3b] Urgent_Escalation",
-              "prompt": "Your severity rating is high. Are you experiencing shortness of breath or chest pain?",
-              "requirement": "User answers yes or no to emergency symptoms.",
-              "nextStepId": "FINISHED"
-            }
-          ]
-        }
-      ]
+      "id": "[3] Medications",
+      "prompt": "Are you currently taking any prescription medications?",
+      "requirement": "User lists medications or states none.",
+      "nextStepId": null
     }
   ]
 }
 ```
 
----
+### Case Study 2: Sales Objection Training (MVP)
 
-### Case Study B: B2B Enterprise Sales Roleplay Training
-
-#### Domain Objective
-Train sales representatives on objection handling (e.g., pricing objections, competitor comparisons) with automated scoring and branching.
-
-#### Domain Data Configuration
-- **User Attributes (`UserProfile`):** `repId`, `tier`, `productLine`, `targetPersona`.
-- **Knowledge Base Injection:** Battle cards, competitive matrix readings.
-
-#### Sample Script Schema (`sales_objection_pricing.json`)
 ```json
 {
-  "initialStepId": "[1] Objection_Pitch",
+  "initialStepId": "[1] Pricing_Objection",
   "steps": [
     {
-      "id": "[1] Objection_Pitch",
-      "prompt": "Simulated Prospect: 'Your software looks interesting, but your pricing is 30% higher than your competitor.' How do you respond?",
-      "requirement": "Rep must acknowledge value, differentiate feature capabilities, and avoid immediate discounting.",
-      "nextStepId": "[2] Value_Followup"
+      "id": "[1] Pricing_Objection",
+      "prompt": "Simulated Client: 'Your service is too expensive.' How do you respond?",
+      "requirement": "Trainee highlights value proposition and ROI.",
+      "nextStepId": "[2] Timing_Objection"
     },
     {
-      "id": "[2] Value_Followup",
-      "prompt": "Simulated Prospect: 'That makes sense, but we don't have budget approval this quarter.' What is your next move?",
-      "requirement": "Rep must propose flexible implementation timeline, ROI demonstration, or phased rollout.",
-      "nextStepId": "FINISHED"
+      "id": "[2] Timing_Objection",
+      "prompt": "Simulated Client: 'We don't have time to implement this quarter.' How do you address this?",
+      "requirement": "Trainee suggests phased onboarding plan.",
+      "nextStepId": null
     }
   ]
 }
 ```
 
----
+### Case Study 3: Corporate Security Onboarding (MVP)
 
-### Case Study C: Employee Onboarding & Compliance Training
-
-#### Domain Objective
-Conduct interactive compliance orientation for new hires, verifying understanding of workplace security and safety policies.
-
-#### Domain Data Configuration
-- **User Attributes (`UserProfile`):** `employeeId`, `department`, `location`, `securityClearance`.
-- **Knowledge Base Injection:** Employee Handbook, Cybersecurity Policy PDF overlays.
-
-#### Sample Script Schema (`cybersecurity_onboarding.json`)
 ```json
 {
-  "initialStepId": "[1] Phishing_Scenario",
+  "initialStepId": "[1] Phishing",
   "steps": [
     {
-      "id": "[1] Phishing_Scenario",
-      "prompt": "Welcome {userName} to {companyName} IT Security Orientation. Imagine you receive an urgent email from your 'CEO' asking for immediate gift card purchases. What steps do you take?",
-      "requirement": "Employee must mention checking sender address, not clicking links, and reporting to IT security desk.",
-      "nextStepId": "[2] Password_Policy"
+      "id": "[1] Phishing",
+      "prompt": "Welcome {userName}. If you receive a suspicious email requesting gift cards, what action do you take?",
+      "requirement": "Employee states reporting email to IT Security.",
+      "nextStepId": "[2] Passwords"
     },
     {
-      "id": "[2] Password_Policy",
-      "prompt": "Correct! Next, what is our corporate policy regarding password sharing with internal colleagues?",
-      "requirement": "Employee must state that passwords should never be shared under any circumstances.",
-      "nextStepId": "FINISHED"
+      "id": "[2] Passwords",
+      "prompt": "What is our company policy regarding sharing work passwords with teammates?",
+      "requirement": "Employee states passwords must never be shared.",
+      "nextStepId": null
     }
   ]
 }
 ```
-
----
-
-## 7. Implementation & Release Roadmap
-
-| Phase | Milestone | Scope & Deliverables | Target Timeline |
-| :--- | :--- | :--- | :--- |
-| **Phase 1** | **Core Engine Extraction** | Abstract hardcoded domain elements into dynamic schema configuration. Implement generic `UserProfile` attributes hydration. | Sprint 1–2 |
-| **Phase 2** | **Multi-Domain Registry** | Implement dynamic script loader allowing script selection based on application domain context (Healthcare, Sales, Onboarding). | Sprint 3–4 |
-| **Phase 3** | **Advanced Analytics & Reporting** | Add domain analytical dashboards to Admin Interface (Step pass/fail analytics, completion funnel). | Sprint 5 |
-| **Phase 4** | **No-Code Script Builder** | Create visual drag-and-drop editor for instructional designers to author scripts, prompts, evaluation criteria, and branching without writing JSON. | Sprint 6–8 |
 
 ---
