@@ -53,6 +53,19 @@ export const handler = async (event: { httpMethod: string; body: string; querySt
       { upsert: true }
     );
 
+    // Secondary write-only backup collection for progress interactions
+    try {
+      const backupCollection = db.collection('responses_backup');
+      await backupCollection.insertOne({
+        userId,
+        scriptId,
+        history,
+        createdAt: new Date()
+      });
+    } catch (backupErr) {
+      console.error('Failed to write to responses_backup collection', backupErr);
+    }
+
     return {
       statusCode: 200,
       body: JSON.stringify({ success: true }),
