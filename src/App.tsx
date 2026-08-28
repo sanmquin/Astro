@@ -58,36 +58,22 @@ const isScriptAllowedForUser = (scriptKey: string, user: UserProfile | 'admin' |
 const isScriptHistoryCompleted = (scriptId: string, history: { stepId: string }[] | undefined) => {
   if (!history || history.length === 0) return false;
 
-  if (scriptId === 'introduccion') {
-    return history.some(h => h.stepId === '[3] Mic Check');
+  const script = SCRIPTS[scriptId];
+  if (!script || !script.steps || script.steps.length === 0) return false;
+
+  const lastStep = script.steps[script.steps.length - 1];
+
+  // If last step is present in history, module is completed
+  if (history.some(h => h.stepId === lastStep.id)) {
+    return true;
   }
-  if (scriptId === 'identidad') {
-    return history.some(h => h.stepId === '[7] Siguiente paso');
+
+  // If only the last step (non-voice) is missing, but all preceding interactive steps are present
+  const precedingSteps = script.steps.slice(0, script.steps.length - 1);
+  if (precedingSteps.length > 0 && precedingSteps.every(s => history.some(h => h.stepId === s.id))) {
+    return true;
   }
-  if (scriptId === 'emociones') {
-    return history.some(h => h.stepId === '[7] Siguiente paso');
-  }
-  if (scriptId === 'venus') {
-    return history.some(h => h.stepId === '[7] Siguiente leccion');
-  }
-  if (scriptId === 'infancia') {
-    return history.some(h => h.stepId === '[9] Siguiente paso');
-  }
-  if (scriptId === 'descendente') {
-    return history.some(h => h.stepId === '[9] Siguiente paso');
-  }
-  if (scriptId === 'nodo_lunar') {
-    return history.some(h => h.stepId === '[9] Siguiente leccion');
-  }
-  if (scriptId === 'casa_solar') {
-    return history.some(h => h.stepId === '[9] Siguiente paso');
-  }
-  if (scriptId === 'casa_karma') {
-    return history.some(h => h.stepId === '[10] Siguiente paso');
-  }
-  if (scriptId === 'valores') {
-    return history.some(h => h.stepId === '[10] Siguiente paso');
-  }
+
   return false;
 };
 
@@ -146,9 +132,17 @@ function App() {
           localStorage.setItem(`completed_scripts_${username}`, JSON.stringify(apiCompleted));
 
           // Compute furthest active script from DB response
+          const hasFutureProgress = sequence.slice(1).some(id => {
+            const record = records.find(r => r.scriptId === id);
+            return record && record.history && record.history.length > 0;
+          });
+
           let furthestScriptId = 'introduccion';
           for (let i = 0; i < sequence.length; i++) {
             const currentId = sequence[i];
+            if (currentId === 'introduccion' && hasFutureProgress) {
+              continue;
+            }
             if (apiCompleted[currentId]) {
               if (i < sequence.length - 1) {
                 furthestScriptId = sequence[i + 1];
@@ -156,7 +150,12 @@ function App() {
                 furthestScriptId = currentId;
               }
             } else {
-              furthestScriptId = currentId;
+              const record = records.find(r => r.scriptId === currentId);
+              if (record && record.history && record.history.length > 0) {
+                furthestScriptId = currentId;
+              } else if (i > 0 && apiCompleted[sequence[i - 1]]) {
+                furthestScriptId = currentId;
+              }
               break;
             }
           }
@@ -164,6 +163,9 @@ function App() {
           // DB progress determines current active script unless a valid saved script is active
           // If savedScriptId is missing or points to introduccion while user has advanced further, sync to DB furthestScriptId
           let activeScriptId = savedScriptId && SCRIPTS[savedScriptId] ? savedScriptId : furthestScriptId;
+          if (activeScriptId === 'introduccion' && hasFutureProgress) {
+            activeScriptId = furthestScriptId;
+          }
           if (!isScriptAllowedForUser(activeScriptId, currentUser)) {
             activeScriptId = 'introduccion';
           }

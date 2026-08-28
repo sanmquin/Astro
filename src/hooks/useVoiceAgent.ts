@@ -192,7 +192,15 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
 
         const nextId = getNextStepId(step);
         if (nextId === null && (!step.branches || step.branches.length === 0)) {
-          // Final interaction, do not wait for user input
+          // Final interaction, record step history if not present and finish
+          setHistory(prev => {
+            if (prev.some(h => h.stepId === step.id)) {
+              return prev;
+            }
+            const updated = [...prev, { stepId: step.id, transcript: 'Completado' }];
+            saveHistory(updated);
+            return updated;
+          });
           setCurrentStepId('FINISHED');
           return 'idle';
         } else {
@@ -483,6 +491,17 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
 
   const advanceStep = useCallback(() => {
     if (!currentStep) return;
+
+    const historyTranscript = transcript.trim() || 'Completado';
+    setHistory(prev => {
+      if (prev.some(h => h.stepId === currentStep.id)) {
+        return prev;
+      }
+      const updated = [...prev, { stepId: currentStep.id, transcript: historyTranscript }];
+      saveHistory(updated);
+      return updated;
+    });
+
     const nextId = getNextStepId(currentStep);
     if (nextId) {
       const nextStep = allSteps.find(s => s.id === nextId);
@@ -494,7 +513,7 @@ export const useVoiceAgent = (script: Script, settings: AgentSettings, scriptId:
       setCurrentStepId('FINISHED');
       setStatus('idle');
     }
-  }, [currentStep, getNextStepId, allSteps, processStep, sessionSettings]);
+  }, [currentStep, transcript, getNextStepId, allSteps, processStep, sessionSettings, saveHistory]);
 
   const playPrompt = useCallback(async () => {
     if (!currentStep) return;
