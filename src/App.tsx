@@ -330,15 +330,15 @@ function App() {
               value={scriptId}
             >
               {isScriptAllowedForUser('introduccion', currentUser) && <option value="introduccion">Astro: Introducción</option>}
-              {isScriptAllowedForUser('identidad', currentUser) && <option value="identidad" disabled={!isAdminUser(currentUser) && !completedScripts['introduccion']}>Astro: Identidad</option>}
-              {isScriptAllowedForUser('emociones', currentUser) && <option value="emociones" disabled={!isAdminUser(currentUser) && !completedScripts['identidad']}>Astro: Emociones</option>}
-              {isScriptAllowedForUser('venus', currentUser) && <option value="venus" disabled={!isAdminUser(currentUser) && !completedScripts['emociones']}>Astro: Venus</option>}
-              {isScriptAllowedForUser('infancia', currentUser) && <option value="infancia" disabled={!isAdminUser(currentUser) && !completedScripts['venus']}>Astro: Infancia</option>}
-              {isScriptAllowedForUser('descendente', currentUser) && <option value="descendente" disabled={!isAdminUser(currentUser) && !completedScripts['infancia']}>Astro: Descendente</option>}
-              {isScriptAllowedForUser('nodo_lunar', currentUser) && <option value="nodo_lunar" disabled={!isAdminUser(currentUser) && !completedScripts['descendente']}>Astro: Nodo Lunar</option>}
-              {isScriptAllowedForUser('casa_solar', currentUser) && <option value="casa_solar" disabled={!isAdminUser(currentUser) && !completedScripts['nodo_lunar']}>Astro: Casa Solar</option>}
-              {isScriptAllowedForUser('casa_karma', currentUser) && <option value="casa_karma" disabled={!isAdminUser(currentUser) && !completedScripts['casa_solar']}>Astro: Casa Karma</option>}
-              {isScriptAllowedForUser('valores', currentUser) && <option value="valores" disabled={!isAdminUser(currentUser) && !completedScripts['casa_karma']}>Astro: Valores</option>}
+              {isScriptAllowedForUser('identidad', currentUser) && <option value="identidad">Astro: Identidad</option>}
+              {isScriptAllowedForUser('emociones', currentUser) && <option value="emociones">Astro: Emociones</option>}
+              {isScriptAllowedForUser('venus', currentUser) && <option value="venus">Astro: Venus</option>}
+              {isScriptAllowedForUser('infancia', currentUser) && <option value="infancia">Astro: Infancia</option>}
+              {isScriptAllowedForUser('descendente', currentUser) && <option value="descendente">Astro: Descendente</option>}
+              {isScriptAllowedForUser('nodo_lunar', currentUser) && <option value="nodo_lunar">Astro: Nodo Lunar</option>}
+              {isScriptAllowedForUser('casa_solar', currentUser) && <option value="casa_solar">Astro: Casa Solar</option>}
+              {isScriptAllowedForUser('casa_karma', currentUser) && <option value="casa_karma">Astro: Casa Karma</option>}
+              {isScriptAllowedForUser('valores', currentUser) && <option value="valores">Astro: Valores</option>}
             </select>
           </div>
           <div className="flex items-center gap-2">

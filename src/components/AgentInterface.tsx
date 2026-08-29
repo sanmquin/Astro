@@ -219,14 +219,12 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
             </button>
           </div>
 
-          {isFinished && !isCompleted && (
-            <button
-              onClick={() => setView('agent')}
-              className="w-full text-sm text-gray-400 hover:text-gray-600 flex items-center justify-center gap-1"
-            >
-              <ArrowLeft size={14} /> Volver a la pantalla final
-            </button>
-          )}
+          <button
+            onClick={() => setView('agent')}
+            className="w-full text-sm text-gray-500 hover:text-gray-700 flex items-center justify-center gap-1 font-medium pt-2"
+          >
+            <ArrowLeft size={16} /> Volver al agente
+          </button>
         </div>
       </div>
     );
@@ -242,14 +240,22 @@ const AgentInterface: React.FC<AgentInterfaceProps> = ({
               {isFinished ? 'Conversación completada' : 'Sigue el guion para completar el curso'}
             </p>
           </div>
-          {hasLecture && (
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {hasLecture && (
+              <button
+                onClick={() => setIsLectureModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-xl font-semibold text-sm transition-all shadow-sm"
+              >
+                <BookOpen size={18} /> Ver lectura
+              </button>
+            )}
             <button
-              onClick={() => setIsLectureModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-xl font-semibold text-sm transition-all flex-shrink-0 shadow-sm"
+              onClick={() => setView('review')}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 rounded-xl font-semibold text-sm transition-all shadow-sm"
             >
-              <BookOpen size={18} /> Ver lectura
+              <FileText size={18} /> Ver respuestas
             </button>
-          )}
+          </div>
         </div>
 
         {!isFinished && (
