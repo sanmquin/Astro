@@ -10,8 +10,9 @@ import astroNodoLunar from '../data/astro_nodo_lunar.json';
 import astroCasaSolar from '../data/astro_casa_solar.json';
 import astroCasaKarma from '../data/astro_casa_karma.json';
 import astroValores from '../data/astro_valores.json';
-import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save, RefreshCw, KeyRound } from 'lucide-react';
+import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save, RefreshCw, KeyRound, Download } from 'lucide-react';
 import { SIGNS, HOUSES } from '../utils/constants';
+import { downloadStudentMarkdown } from '../utils/exportMarkdown';
 
 type View = 'students' | 'student-detail' | 'module-detail' | 'create-user';
 
@@ -461,6 +462,14 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                           <td className="py-4 px-4 text-right">
                             <div className="flex justify-end gap-2 flex-wrap">
                               <button
+                                onClick={() => downloadStudentMarkdown(profile, responses)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors text-sm font-medium"
+                                title="Exportar respuestas y lecturas a Markdown"
+                              >
+                                <Download size={16} />
+                                Exportar
+                              </button>
+                              <button
                                 onClick={() => handleResetPassword(profile.username)}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors text-sm font-medium"
                                 title="Restablecer contraseña"
@@ -517,15 +526,30 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     <p className="text-gray-500 font-mono text-sm">{selectedUserId}</p>
                   </div>
                 </div>
-                {/* Option to reset user progress disabled for now */}
-                <button
-                  disabled
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-400 cursor-not-allowed rounded-lg transition-colors text-sm font-medium"
-                  title="La opción de reiniciar progreso está deshabilitada temporalmente"
-                >
-                  <RefreshCw size={16} />
-                  Reiniciar Progreso
-                </button>
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const selectedProfile = profiles.find(p => p.username === selectedUserId);
+                    return selectedProfile ? (
+                      <button
+                        onClick={() => downloadStudentMarkdown(selectedProfile, responses)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm font-medium shadow-sm"
+                        title="Exportar curso a Markdown"
+                      >
+                        <Download size={16} />
+                        Exportar Markdown
+                      </button>
+                    ) : null;
+                  })()}
+                  {/* Option to reset user progress disabled for now */}
+                  <button
+                    disabled
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-400 cursor-not-allowed rounded-lg transition-colors text-sm font-medium"
+                    title="La opción de reiniciar progreso está deshabilitada temporalmente"
+                  >
+                    <RefreshCw size={16} />
+                    Reiniciar Progreso
+                  </button>
+                </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
