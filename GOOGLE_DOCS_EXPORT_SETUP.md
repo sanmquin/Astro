@@ -1,112 +1,122 @@
-# Configuración y Permisos para Exportación a Google Docs
+# Configuración y Permisos para Exportación a Google Docs (OAuth 2.0)
 
-Este documento detalla la configuración, los permisos, las funciones requeridas y los secretos necesarios para habilitar y depurar la función de exportación de datos del curso de astrología Casa Siete directamente a **Google Docs**.
+Este documento detalla la configuración, credenciales, flujo de autorización OAuth 2.0 y variables de entorno necesarias para habilitar la exportación de datos del curso de astrología Casa Siete directamente a **Google Docs** mediante una cuenta personal de Google.
 
 ---
 
 ## 1. Visión General del Proceso
 
-La exportación genera un nuevo documento de Google Docs para el estudiante seleccionado mediante la API oficial de Google Docs y Google Drive (`googleapis`). El backend serverless (`netlify/functions/export-gdoc.ts`) autentica la solicitud con una **Cuenta de Servicio (Service Account)** de Google Cloud, crea el documento con el título igual al nombre de usuario del estudiante, aplica los estilos de formato solicitados y configura los permisos para compartir el enlace.
+La exportación genera un nuevo documento de Google Docs para el estudiante seleccionado utilizando la API oficial de Google Docs y Google Drive (`googleapis`).
+
+**Importante:** La exportación utiliza **OAuth 2.0** con una cuenta personal de Google. No utiliza Cuentas de Servicio (Service Accounts), delegación a nivel de dominio ni funciones de Google Workspace. La cuenta personal autenticada vía OAuth 2.0 será la **propietaria directa** de los documentos creados en su Google Drive.
+
+El backend serverless (`netlify/functions/export-gdoc.ts`) utiliza un **Refresh Token** de OAuth 2.0 para obtener automáticamente tokens de acceso válidos sin requerir intervención interactiva en cada exportación.
 
 ---
 
 ## 2. Configuración en Google Cloud Platform (GCP)
 
-Para habilitar la integración con Google Docs, siga estos pasos en la consola de Google Cloud ([https://console.cloud.google.com](https://console.cloud.google.com)):
+Siga estos pasos en la consola de Google Cloud ([https://console.cloud.google.com](https://console.cloud.google.com)):
 
 ### Paso 1: Crear o Seleccionar un Proyecto
-1. Acceda a Google Cloud Console.
+1. Inicie sesión en Google Cloud Console.
 2. Cree un nuevo proyecto o seleccione uno existente (ejemplo: `Casa-Siete-Export`).
 
 ### Paso 2: Habilitar las APIs Requeridas
-En la sección **APIs y Servicios > Biblioteca**:
+En **APIs y Servicios > Biblioteca**:
 1. Busque **Google Docs API** y haga clic en **Habilitar**.
 2. Busque **Google Drive API** y haga clic en **Habilitar**.
 
----
+### Paso 3: Configurar la Pantalla de Consentimiento de OAuth (OAuth Consent Screen)
+1. Vaya a **APIs y Servicios > Pantalla de consentimiento de OAuth**.
+2. Seleccione el tipo de usuario (**Externo** o **Interno** segun su tipo de cuenta).
+3. Complete los datos básicos de la aplicación (Nombre: `Casa Siete Exportador`, Correo de soporte).
+4. En **Permisos (Scopes)**, agregue los siguientes alcances necesarios:
+   - `https://www.googleapis.com/auth/documents` (Crear y modificar documentos de Google Docs)
+   - `https://www.googleapis.com/auth/drive` (Gestión de archivos y carpetas en Google Drive)
+5. Si la aplicación está en estado "En prueba" (Testing), agregue su correo de Google en la sección **Usuarios de prueba (Test users)**.
 
-## 3. Roles, Permisos y Cuenta de Servicio
-
-### Roles y Permisos IAM Requeridos
-La cuenta de servicio necesita los siguientes permisos para crear y modificar documentos:
-
-* **Rol IAM Recomendado:** `Editor` o `Creador de documentos / Editor de Drive` en el proyecto GCP.
-* **Permisos específicos:**
-  * `documents.create`
-  * `documents.get`
-  * `documents.update`
-  * `drive.files.create`
-  * `drive.permissions.create`
-
-### Scopes de OAuth 2.0 Requeridos
-El backend serverless solicita los siguientes alcances (scopes):
-* `https://www.googleapis.com/auth/documents` (Lectura y escritura en Google Docs)
-* `https://www.googleapis.com/auth/drive` (Creación y gestión de permisos en Google Drive)
-* `https://www.googleapis.com/auth/drive.file` (Acceso a archivos creados por la aplicación)
-
-### Crear la Cuenta de Servicio y Generar Claves
-1. Vaya a **IAM y administración > Cuentas de servicio**.
-2. Haga clic en **Crear cuenta de servicio**.
-3. Asigne un nombre (ej. `exportador-casa-siete`).
-4. Asigne el rol `Editor` (o permisos de Google Drive/Docs).
-5. En la pestaña **Claves (Keys)**, haga clic en **Agregar clave > Crear clave nueva**.
-6. Seleccione formato **JSON** y descargue el archivo.
+### Paso 4: Crear Credenciales OAuth 2.0 (ID de Cliente Web)
+1. Vaya a **APIs y Servicios > Credenciales**.
+2. Haga clic en **Crear credenciales > ID de cliente de OAuth**.
+3. En **Tipo de aplicación**, seleccione **Aplicación web**.
+4. Nombre: `Casa Siete Web App`.
+5. En **URIs de redireccionamiento autorizados**, agregue:
+   - `http://localhost` (o la URL correspondiente de redirección).
+6. Haga clic en **Crear** y guarde los valores generados:
+   - **ID de cliente** (`GOOGLE_CLIENT_ID`)
+   - **Secreto de cliente** (`GOOGLE_CLIENT_SECRET`)
 
 ---
 
-## 4. Variables de Entorno y Secretos Requeridos
+## 3. Autorización Única de OAuth 2.0 (Obtener Refresh Token)
 
-En el entorno de ejecución (Netlify / `.env`), debe configurar las siguientes variables de entorno utilizando los valores del archivo JSON descargado:
+Para permitir que el backend serverless exporte documentos automáticamente en nombre de su cuenta de Google, ejecute por única vez el script de autorización incluido en el proyecto:
 
-| Variable | Descripción | Ejemplo |
-| :--- | :--- | :--- |
-| `GOOGLE_CLIENT_EMAIL` | Correo electrónico de la Cuenta de Servicio | `exportador-casa-siete@project.iam.gserviceaccount.com` |
-| `GOOGLE_PRIVATE_KEY` | Clave privada RSA en formato PEM | `"-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBg...=\n-----END PRIVATE KEY-----\n"` |
-| `GOOGLE_DRIVE_FOLDER_ID` | *(Opcional)* ID de la carpeta de Drive destino | `1A2b3C4d5E6f7G8h9I0J` |
+```bash
+npm run get-oauth-token
+```
 
-> **Nota sobre `GOOGLE_PRIVATE_KEY`:** La clave privada contiene saltos de línea (`\n`). Asegúrese de incluir comillas o de que las secuencias `\n` sean procesadas correctamente por la función serverless mediante `.replace(/\\n/g, '\n')`.
+### Flujo paso a paso del script:
+1. Ingrese su `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`.
+2. Abra en su navegador el enlace web que genera el script.
+3. Inicie sesión con la **cuenta personal de Google** que será propietaria de los documentos exportados.
+4. Conceda los permisos solicitados.
+5. Copie el valor del parámetro `code` de la URL final a la que lo redirige el navegador.
+6. Pegue el código de autorización en la terminal.
+7. El script generará su **`GOOGLE_REFRESH_TOKEN`**.
+
+---
+
+## 4. Variables de Entorno y Secretos Requeridos en Netlify
+
+En el panel de Netlify (**Site settings > Environment variables** o archivo `.env` local), configure las siguientes variables:
+
+| Variable | Descripción | Obligatorio | Ejemplo |
+| :--- | :--- | :---: | :--- |
+| `GOOGLE_CLIENT_ID` | ID de cliente OAuth 2.0 de GCP | Sí | `123456789-abc.apps.googleusercontent.com` |
+| `GOOGLE_CLIENT_SECRET` | Secreto de cliente OAuth 2.0 | Sí | `GOCSPX-abc123xyz...` |
+| `GOOGLE_REDIRECT_URI` | URI de redireccionamiento autorizado | No (Defecto: `http://localhost`) | `http://localhost` |
+| `GOOGLE_REFRESH_TOKEN` | Token de actualización obtenido en el paso 3 | Sí | `1//04abc123def...` |
+| `GOOGLE_DRIVE_FOLDER_ID` | ID de la carpeta destino en Google Drive | No | `1A2b3C4d5E6f7G8h9I0J` |
+
+> **Seguridad:** Nunca exponga `GOOGLE_CLIENT_SECRET` ni `GOOGLE_REFRESH_TOKEN` en el código frontend cliente ni en repositorios públicos.
 
 ---
 
 ## 5. Arquitectura de Logs para Depuración y Verificación
 
-Para facilitar la configuración y depuración de errores de permisos o credenciales, se implementaron logs detallados tanto en la función de API como en la interfaz de usuario (UI).
+La función serverless `netlify/functions/export-gdoc.ts` registra y retorna logs detallados en la respuesta JSON para facilitar el diagnóstico:
 
-### Server-Side Logs (`netlify/functions/export-gdoc.ts`)
-La función API registra y retorna una lista cronológica de pasos en la propiedad `logs` de la respuesta JSON:
-
-1. `[INFO] Inicio del proceso de exportación a Google Doc para usuario: <username>`
-2. `[INFO] Verificando variables de entorno (GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY)...`
-3. `[INFO] Conectando a la base de datos MongoDB...`
-4. `[INFO] Obteniendo perfil y respuestas del estudiante...`
-5. `[INFO] Autenticando con Google APIs (JWT)...`
-6. `[INFO] Creando documento en Google Docs con título: "<username>"`
-7. `[SUCCESS] Documento creado con ID: <documentId>`
-8. `[INFO] Generando bloques de contenido y reglas de formato...`
-9. `[INFO] Aplicando estilos batchUpdate en Google Docs...`
-10. `[SUCCESS] Formato aplicado correctamente.`
-11. `[INFO] Configurando permisos de lectura pública mediante enlace...`
-12. `[SUCCESS] Permisos actualizados. URL: https://docs.google.com/document/d/<documentId>/edit`
-
-### Client-Side UI (`src/components/AdminInterface.tsx`)
-En el Panel de Administración:
-* Al hacer clic en **Exportar a Google Doc**, se abre una ventana modal de estado.
-* La modal muestra los logs en tiempo real o el flujo completo de la API.
-* Si el proceso es exitoso, proporciona un botón directo para abrir el documento en Google Docs.
-* Si ocurre un error (por ejemplo, credenciales faltantes o falla de autenticación), la modal muestra la lista detallada de errores con instrucciones claras para solucionar la configuración.
+1. `[INFO] Initiating Google Doc export process for username: <username>`
+2. `[INFO] Verifying Google OAuth 2.0 environment variables...`
+3. `[INFO] OAuth Check -> GOOGLE_CLIENT_ID: Present`
+4. `[INFO] OAuth Check -> GOOGLE_CLIENT_SECRET: Present`
+5. `[INFO] OAuth Check -> GOOGLE_REFRESH_TOKEN: Present`
+6. `[INFO] Authenticating with Google APIs via OAuth 2.0 user credentials...`
+7. `[INFO] Refreshing OAuth 2.0 access token...`
+8. `[SUCCESS] OAuth 2.0 access token obtained successfully.`
+9. `[SUCCESS] Authenticated Google Account: usuario@gmail.com`
+10. `[INFO] Creating Google Document with title: "<username>"...`
+11. `[SUCCESS] Google Document created successfully with ID: <documentId>`
+12. `[INFO] Constructing document content blocks and styles...`
+13. `[INFO] Sending batchUpdate requests to Google Docs API...`
+14. `[SUCCESS] Document text content and styles applied successfully.`
+15. `[SUCCESS] Google Document export completed successfully! URL: https://docs.google.com/document/d/<documentId>/edit`
 
 ---
 
 ## 6. Formato del Documento Generado
 
-El documento generado cumple estrictamente con las siguientes reglas de formato:
+El documento generado cumple estrictamente con el siguiente formato:
 
-1. **Título del Documento:** Formato `TITLE` con el nombre de usuario del estudiante (ej. `JuanPerez`).
-2. **Perfil Astrológico:** Encabezado con formato `HEADING_2`, seguido de las líneas del perfil sin viñetas (*no bullet points*).
-3. **Módulos:** Títulos de módulo en formato `HEADING_2`.
-4. **Subtítulo:** Texto `"Preguntas y Respuestas"` con formato `SUBTITLE`.
-5. **Preguntas y Respuestas:** Texto de las preguntas sin formato de encabezado (*no heading format*), en negrita (**bold**), con espacio simple hacia la respuesta en la línea siguiente.
-6. **Sin Divisiones:** Sin líneas horizontales ni divisores entre módulos.
+1. **Título del Documento:** Estilo `TITLE` con el nombre de usuario del estudiante (ej. `JuanPerez`).
+2. **Perfil Astrológico:** Encabezado `HEADING_2`, seguido de las líneas de datos en texto plano sin viñetas.
+3. **Módulos:** Título de módulo en estilo `HEADING_2`.
+4. **Lectura:** Título en negrita y contenido en texto normal.
+5. **Subtítulo:** Texto `"Preguntas y Respuestas"` en estilo `SUBTITLE`.
+6. **Preguntas y Respuestas:** Texto de las preguntas en negrita en estilo texto normal (sin encabezado `HEADING`), con la respuesta en espacio simple en la línea siguiente.
+7. **Sin Divisiones:** Sin líneas ni divisores horizontales entre módulos.
 
 ---
 
@@ -114,7 +124,8 @@ El documento generado cumple estrictamente con las siguientes reglas de formato:
 
 | Error en Logs | Causa Probable | Solución |
 | :--- | :--- | :--- |
-| `Missing GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY` | Las variables de entorno no están configuradas en Netlify. | Añadir las variables en Netlify Dashboard > Site settings > Environment variables. |
-| `invalid_grant` / `PEM routines:get_name:no start line` | Formato incorrecto en `GOOGLE_PRIVATE_KEY`. | Verificar que la clave conserve los encabezados `-----BEGIN PRIVATE KEY-----` y los `\n`. |
-| `403 Forbidden` / `Google Docs API has not been used in project...` | La API de Google Docs o Google Drive no está habilitada. | Habilitar la API en GCP Console > APIs y Servicios > Biblioteca. |
-| `404 Not Found` al abrir la URL | El enlace se generó pero los permisos de lectura fallaron. | Verificar que la API de Google Drive tenga permisos para ejecutar `drive.permissions.create`. |
+| `One-time Google authorization has not been completed (missing GOOGLE_REFRESH_TOKEN)` | Falta la variable `GOOGLE_REFRESH_TOKEN` en el entorno. | Ejecute `npm run get-oauth-token` para obtener y configurar el refresh token. |
+| `OAuth 2.0 authentication failed: invalid_grant` | El Refresh Token venció o fue revocado, o la pantalla OAuth está en Testing y expiró tras 7 días. | Vuelva a ejecutar `npm run get-oauth-token` o pase la app de Google Cloud a estado "In Production". |
+| `Google Docs API document creation error` | La API de Google Docs no está habilitada en GCP o la cuenta no tiene permisos. | Habilite Google Docs API en GCP Console > APIs y Servicios. |
+| `Could not move document to folder` | La carpeta `GOOGLE_DRIVE_FOLDER_ID` no existe o no pertenece/está compartida con la cuenta OAuth. | Verifique el ID de la carpeta en Google Drive y que la cuenta autorizada tenga acceso de edición a ella. |
+| `The caller does not have permission` | Intentar usar una Service Account sin almacenamiento propio. | **Solución aplicada:** Migrar a autenticación OAuth 2.0 siguiendo esta guía. |
