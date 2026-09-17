@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { google, docs_v1 } from 'googleapis';
 import { connectToDatabase } from './utils/mongodb';
 import type { UserProfile, ResponseRecord, Script, ScriptStep } from '../../src/types';
 import { getLectureForScript } from '../../src/data/lectures';
@@ -84,6 +84,7 @@ export const handler = async (event: { httpMethod: string; body?: string; queryS
   if (event.httpMethod !== 'POST' && event.httpMethod !== 'GET') {
     return {
       statusCode: 405,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Method Not Allowed', logs }),
     };
   }
@@ -106,6 +107,7 @@ export const handler = async (event: { httpMethod: string; body?: string; queryS
       log('[ERROR] Missing required parameter: username');
       return {
         statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ success: false, error: 'username parameter is required', logs }),
       };
     }
@@ -122,6 +124,7 @@ export const handler = async (event: { httpMethod: string; body?: string; queryS
       log(`[ERROR] User profile not found in database for username: ${username}`);
       return {
         statusCode: 404,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ success: false, error: `User profile for '${username}' not found`, logs }),
       };
     }
@@ -131,52 +134,115 @@ export const handler = async (event: { httpMethod: string; body?: string; queryS
     const userResponses = await db.collection<ResponseRecord>('responses').find({ userId: username }).toArray();
     log(`[SUCCESS] Retrieved ${userResponses.length} module response records.`);
 
-    // Verify Google API credentials
-    const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+    // Verify Google OAuth 2.0 credentials
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost';
 
-    if (!clientEmail || !privateKey) {
-      log('[ERROR] Google Credentials missing in server environment variables.');
-      log('[ERROR] Please ensure GOOGLE_CLIENT_EMAIL and GOOGLE_PRIVATE_KEY are set.');
+    log('[INFO] Verifying Google OAuth 2.0 environment variables...');
+    log(`[INFO] OAuth Check -> GOOGLE_CLIENT_ID: ${clientId ? 'Present' : 'MISSING'}`);
+    log(`[INFO] OAuth Check -> GOOGLE_CLIENT_SECRET: ${clientSecret ? 'Present' : 'MISSING'}`);
+    log(`[INFO] OAuth Check -> GOOGLE_REFRESH_TOKEN: ${refreshToken ? 'Present' : 'MISSING'}`);
+    log(`[INFO] OAuth Check -> GOOGLE_REDIRECT_URI: ${redirectUri}`);
+
+    if (!clientId || !clientSecret || !refreshToken) {
+      if (!refreshToken) {
+        log('[ERROR] Google OAuth authorization incomplete: GOOGLE_REFRESH_TOKEN environment variable is missing.');
+        log('[INFO] Run one-time OAuth authorization flow (e.g. `npm run get-oauth-token`) to obtain a refresh token.');
+      } else {
+        log('[ERROR] Required OAuth 2.0 client credentials (GOOGLE_CLIENT_ID and/or GOOGLE_CLIENT_SECRET) are missing.');
+      }
       log('[INFO] Refer to GOOGLE_DOCS_EXPORT_SETUP.md for step-by-step setup instructions.');
       return {
         statusCode: 500,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           success: false,
-          error: 'Google API credentials not configured in environment variables (GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY).',
+          error: !refreshToken
+            ? 'One-time Google authorization has not been completed (missing GOOGLE_REFRESH_TOKEN).'
+            : 'Google OAuth credentials not configured in environment variables (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN).',
           logs,
         }),
       };
     }
 
-    log('[INFO] Authenticating with Google APIs (JWT auth)...');
-    const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
-    const auth = new google.auth.JWT({
-      email: clientEmail,
-      key: formattedPrivateKey,
-      scopes: [
-        'https://www.googleapis.com/auth/documents',
-        'https://www.googleapis.com/auth/drive',
-        'https://www.googleapis.com/auth/drive.file',
-      ],
+    log('[INFO] Authenticating with Google APIs via OAuth 2.0 user credentials...');
+    const oauth2Client = new google.auth.OAuth2(
+      clientId,
+      clientSecret,
+      redirectUri
+    );
+
+    oauth2Client.setCredentials({
+      refresh_token: refreshToken,
     });
 
-    const docsApi = google.docs({ version: 'v1', auth });
-    const driveApi = google.drive({ version: 'v3', auth });
+    const docsApi = google.docs({ version: 'v1', auth: oauth2Client });
+    const driveApi = google.drive({ version: 'v3', auth: oauth2Client });
+
+    // Verify OAuth token refresh and retrieve Google Account Identity safely
+    log('[INFO] Refreshing OAuth 2.0 access token...');
+    try {
+      const tokenRes = await oauth2Client.getAccessToken();
+      if (!tokenRes.token) {
+        throw new Error('No access token returned from Google OAuth token refresh.');
+      }
+      log('[SUCCESS] OAuth 2.0 access token obtained successfully.');
+    } catch (authError) {
+      const authErrMsg = authError instanceof Error ? authError.message : String(authError);
+      log(`[ERROR] OAuth 2.0 authentication failure during token refresh: ${authErrMsg}`);
+      return {
+        statusCode: 500,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: false,
+          error: `OAuth 2.0 authentication failed: ${authErrMsg}. Check that GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REFRESH_TOKEN are valid and not revoked.`,
+          logs,
+        }),
+      };
+    }
+
+    // Safely log authenticated user account details if available
+    try {
+      const aboutRes = await driveApi.about.get({ fields: 'user(displayName, emailAddress)' });
+      const user = aboutRes.data.user;
+      if (user?.emailAddress) {
+        log(`[SUCCESS] Authenticated Google Account: ${user.emailAddress}${user.displayName ? ` (${user.displayName})` : ''}`);
+      }
+    } catch {
+      log('[INFO] Authenticated with OAuth 2.0 (Account identity details unavailable via Drive API).');
+    }
 
     // I. Create a new document with title as user name
     log(`[INFO] Creating Google Document with title: "${userProfile.username}"...`);
-    const createRes = await docsApi.documents.create({
-      requestBody: {
-        title: userProfile.username,
-      },
-    });
+    let createRes;
+    try {
+      createRes = await docsApi.documents.create({
+        requestBody: {
+          title: userProfile.username,
+        },
+      });
+    } catch (docCreateErr) {
+      const createErrMsg = docCreateErr instanceof Error ? docCreateErr.message : String(docCreateErr);
+      log(`[ERROR] Google Docs API document creation failed (documents.create): ${createErrMsg}`);
+      return {
+        statusCode: 500,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: false,
+          error: `Google Docs API document creation error: ${createErrMsg}`,
+          logs,
+        }),
+      };
+    }
 
     const documentId = createRes.data.documentId;
     if (!documentId) {
       log('[ERROR] Failed to obtain documentId from Google Docs API response.');
       return {
         statusCode: 500,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ success: false, error: 'Failed to create Google Document', logs }),
       };
     }
@@ -280,7 +346,7 @@ export const handler = async (event: { httpMethod: string; body?: string; queryS
 
     // Build batchUpdate requests using exact index arithmetic (starting index = 1)
     log(`[INFO] Generated ${blocks.length} content blocks. Calculating Google Docs API request ranges...`);
-    const requests: any[] = [];
+    const requests: docs_v1.Schema$Request[] = [];
     let currentIndex = 1;
 
     for (const block of blocks) {
