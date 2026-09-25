@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { SIGNS, HOUSES } from '../utils/constants';
 import { downloadStudentMarkdown } from '../utils/exportMarkdown';
+import { downloadSystemCsv } from '../utils/exportCsv';
 
 type View = 'students' | 'student-detail' | 'module-detail' | 'create-user';
 
@@ -188,13 +189,13 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
               {isRestricted ? 'Crear Usuarios' : 'Panel de Administración'}
             </h1>
           </div>
-          {!isRestricted && view !== 'students' && (
+          {view !== 'students' && (
             <button
               onClick={() => setView('students')}
               className="flex items-center gap-2 px-3 py-1.5 bg-blue-500 hover:bg-blue-400 rounded-lg transition-colors text-sm font-medium"
             >
               <ChevronLeft size={16} />
-              Volver a la lista
+              Ver lista de estudiantes
             </button>
           )}
         </div>
@@ -421,7 +422,7 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
             </div>
           )}
 
-          {!isRestricted && view === 'students' && (
+          {view === 'students' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-800">Estudiantes</h2>
@@ -432,6 +433,14 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                   >
                     <UserPlus size={16} />
                     Crear Usuario
+                  </button>
+                  <button
+                    onClick={() => downloadSystemCsv(profiles, responses)}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm font-medium shadow-xs"
+                    title="Exportar todos los datos del sistema en formato CSV para análisis"
+                  >
+                    <Download size={16} />
+                    Exportar CSV Sistema
                   </button>
                   {Object.keys(SCRIPTS).map(scriptId => (
                     <button
