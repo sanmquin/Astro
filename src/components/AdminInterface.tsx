@@ -10,8 +10,13 @@ import astroNodoLunar from '../data/astro_nodo_lunar.json';
 import astroCasaSolar from '../data/astro_casa_solar.json';
 import astroCasaKarma from '../data/astro_casa_karma.json';
 import astroValores from '../data/astro_valores.json';
-import { Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus, Save, RefreshCw, KeyRound } from 'lucide-react';
+import {
+  Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus,
+  Save, RefreshCw, KeyRound, Download, FileText, ExternalLink, X, AlertTriangle, Terminal, Trash2
+} from 'lucide-react';
 import { SIGNS, HOUSES } from '../utils/constants';
+import { downloadStudentMarkdown } from '../utils/exportMarkdown';
+import { downloadSystemCsv } from '../utils/exportCsv';
 
 type View = 'students' | 'student-detail' | 'module-detail' | 'create-user';
 
@@ -54,6 +59,12 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [editingProfile, setEditingProfile] = useState<UserProfile | null>(null);
 
+  // Google Docs Export state & logs modal
+  const [exportModalUser, setExportModalUser] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportLogs, setExportLogs] = useState<string[]>([]);
+  const [exportResult, setExportResult] = useState<{ documentUrl?: string; documentId?: string; error?: string } | null>(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -79,6 +90,60 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
     };
     fetchData();
   }, []);
+
+  const handleExportGoogleDoc = async (username: string) => {
+    setExportModalUser(username);
+    setExporting(true);
+    setExportResult(null);
+    setExportLogs([`[${new Date().toISOString()}] [UI] Solicitando exportación a Google Docs para '${username}'...`]);
+
+    try {
+      const res = await fetch('/.netlify/functions/export-gdoc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+      });
+
+      const data = await res.json();
+      if (data.logs && Array.isArray(data.logs)) {
+        setExportLogs(data.logs);
+      }
+
+      if (res.ok && data.success) {
+        setExportResult({ documentUrl: data.documentUrl, documentId: data.documentId });
+      } else {
+        setExportResult({ error: data.error || 'Error al exportar el documento a Google Docs.' });
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setExportLogs(prev => [...prev, `[${new Date().toISOString()}] [ERROR] Error de conexión: ${errMsg}`]);
+      setExportResult({ error: `Error de red o conexión al servidor: ${errMsg}` });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDeleteUser = async (username: string) => {
+    if (!window.confirm(`¿Estás seguro de eliminar al usuario ${username}? Esta acción eliminará su perfil y sus respuestas de manera permanente.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/.netlify/functions/users?username=${encodeURIComponent(username)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Usuario ${username} eliminado exitosamente.`);
+        setProfiles(prev => prev.filter(p => p.username !== username));
+        setResponses(prev => prev.filter(r => r.userId !== username));
+      } else {
+        alert(data.error || 'Error al eliminar usuario');
+      }
+    } catch (err) {
+      console.error('Failed to delete user', err);
+      alert('Error de conexión al eliminar usuario');
+    }
+  };
 
   const handleResetPassword = async (username: string) => {
     if (!window.confirm(`¿Estás seguro de restablecer la contraseña para ${username}? El usuario creará una nueva contraseña en su próximo inicio de sesión.`)) {
@@ -146,13 +211,13 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
               {isRestricted ? 'Crear Usuarios' : 'Panel de Administración'}
             </h1>
           </div>
-          {!isRestricted && view !== 'students' && (
+          {view !== 'students' && (
             <button
               onClick={() => setView('students')}
               className="flex items-center gap-2 px-3 py-1.5 bg-blue-500 hover:bg-blue-400 rounded-lg transition-colors text-sm font-medium"
             >
               <ChevronLeft size={16} />
-              Volver a la lista
+              Ver lista de estudiantes
             </button>
           )}
         </div>
@@ -203,7 +268,6 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     if (response.ok) {
                       alert('Usuario creado exitosamente');
                       (e.target as HTMLFormElement).reset();
-                      // Refresh profiles if not restricted
                       if (!isRestricted) {
                         const res = await fetch('/.netlify/functions/users');
                         if (res.ok) setProfiles(await res.json());
@@ -380,7 +444,7 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
             </div>
           )}
 
-          {!isRestricted && view === 'students' && (
+          {view === 'students' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-800">Estudiantes</h2>
@@ -391,6 +455,14 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                   >
                     <UserPlus size={16} />
                     Crear Usuario
+                  </button>
+                  <button
+                    onClick={() => downloadSystemCsv(profiles, responses)}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm font-medium shadow-xs"
+                    title="Exportar todos los datos del sistema en formato CSV para análisis"
+                  >
+                    <Download size={16} />
+                    Exportar CSV Sistema
                   </button>
                   {Object.keys(SCRIPTS).map(scriptId => (
                     <button
@@ -461,12 +533,28 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                           <td className="py-4 px-4 text-right">
                             <div className="flex justify-end gap-2 flex-wrap">
                               <button
+                                onClick={() => handleExportGoogleDoc(profile.username)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium shadow-xs"
+                                title="Exportar curso a Google Docs"
+                              >
+                                <FileText size={16} />
+                                Exportar a Google Docs
+                              </button>
+                              <button
+                                onClick={() => downloadStudentMarkdown(profile, responses)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
+                                title="Exportar respuestas y lecturas a Markdown local"
+                              >
+                                <Download size={16} />
+                                Markdown
+                              </button>
+                              <button
                                 onClick={() => handleResetPassword(profile.username)}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors text-sm font-medium"
                                 title="Restablecer contraseña"
                               >
                                 <KeyRound size={16} />
-                                Restablecer Contraseña
+                                Restablecer
                               </button>
                               <button
                                 onClick={() => setEditingProfile(profile)}
@@ -474,6 +562,14 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                               >
                                 <Save size={16} />
                                 Editar
+                              </button>
+                              <button
+                                onClick={() => handleDeleteUser(profile.username)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
+                                title="Eliminar usuario"
+                              >
+                                <Trash2 size={16} />
+                                Eliminar
                               </button>
                               <button
                                 onClick={() => {
@@ -485,7 +581,6 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                                 <User size={16} />
                                 Detalle
                               </button>
-                              {/* Option to reset user progress disabled for now */}
                               <button
                                 disabled
                                 className="inline-flex items-center gap-2 px-3 py-1.5 text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed text-sm font-medium"
@@ -517,15 +612,37 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                     <p className="text-gray-500 font-mono text-sm">{selectedUserId}</p>
                   </div>
                 </div>
-                {/* Option to reset user progress disabled for now */}
-                <button
-                  disabled
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-400 cursor-not-allowed rounded-lg transition-colors text-sm font-medium"
-                  title="La opción de reiniciar progreso está deshabilitada temporalmente"
-                >
-                  <RefreshCw size={16} />
-                  Reiniciar Progreso
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleExportGoogleDoc(selectedUserId)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium shadow-sm"
+                    title="Exportar curso a Google Docs"
+                  >
+                    <FileText size={16} />
+                    Exportar a Google Docs
+                  </button>
+                  {(() => {
+                    const selectedProfile = profiles.find(p => p.username === selectedUserId);
+                    return selectedProfile ? (
+                      <button
+                        onClick={() => downloadStudentMarkdown(selectedProfile, responses)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium shadow-xs"
+                        title="Exportar curso a Markdown"
+                      >
+                        <Download size={16} />
+                        Descargar Markdown
+                      </button>
+                    ) : null;
+                  })()}
+                  <button
+                    disabled
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-400 cursor-not-allowed rounded-lg transition-colors text-sm font-medium"
+                    title="La opción de reiniciar progreso está deshabilitada temporalmente"
+                  >
+                    <RefreshCw size={16} />
+                    Reiniciar Progreso
+                  </button>
+                </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -650,6 +767,130 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
           )}
         </div>
       </div>
+
+      {/* Google Docs Export Modal */}
+      {exportModalUser && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto border border-gray-100">
+            <div className="flex justify-between items-start border-b border-gray-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
+                  <FileText size={22} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">
+                    Exportar a Google Docs
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Documento para el estudiante <span className="font-semibold text-blue-600">{exportModalUser}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setExportModalUser(null)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Status indicators */}
+            {exporting && (
+              <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 p-4 rounded-xl text-blue-700">
+                <Loader2 size={24} className="animate-spin text-blue-600 flex-shrink-0" />
+                <div>
+                  <p className="font-bold text-sm">Generando documento en Google Docs...</p>
+                  <p className="text-xs text-blue-600 mt-0.5">Creando documento titulado '{exportModalUser}', aplicando formato y configurando permisos.</p>
+                </div>
+              </div>
+            )}
+
+            {!exporting && exportResult?.documentUrl && (
+              <div className="bg-emerald-50 border border-emerald-200 p-5 rounded-xl text-emerald-800 space-y-3">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 size={28} className="text-emerald-600 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-bold text-base">¡Documento Creado Exitosamente!</h4>
+                    <p className="text-xs text-emerald-700">Se generó el documento de Google Docs con el título '{exportModalUser}' y formato de perfil astrológico.</p>
+                  </div>
+                </div>
+                <div className="pt-2">
+                  <a
+                    href={exportResult.documentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md transition-all w-full justify-center"
+                  >
+                    <ExternalLink size={18} />
+                    Abrir Documento en Google Docs
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {!exporting && exportResult?.error && (
+              <div className="bg-red-50 border border-red-200 p-5 rounded-xl text-red-800 space-y-3">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle size={24} className="text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-sm text-red-900">Error en la exportación</h4>
+                    <p className="text-xs text-red-700 mt-1">{exportResult.error}</p>
+                    <p className="text-xs text-red-600 mt-2 font-medium">
+                      Consulta la guía de configuración en <code className="bg-red-100 px-1 py-0.5 rounded font-mono">GOOGLE_DOCS_EXPORT_SETUP.md</code> para configurar las credenciales GCP en Netlify.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Detailed Debugging Logs stream */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <span className="flex items-center gap-1.5">
+                  <Terminal size={14} className="text-gray-400" />
+                  Logs de ejecución y depuración
+                </span>
+                <span>{exportLogs.length} líneas</span>
+              </div>
+              <div className="bg-gray-950 text-emerald-400 font-mono text-xs p-4 rounded-xl max-h-56 overflow-y-auto space-y-1 shadow-inner border border-gray-800">
+                {exportLogs.map((logLine, i) => (
+                  <div
+                    key={i}
+                    className={`leading-relaxed whitespace-pre-wrap break-all ${
+                      logLine.includes('[ERROR]') ? 'text-red-400 font-semibold' :
+                      logLine.includes('[SUCCESS]') ? 'text-emerald-300 font-semibold' :
+                      logLine.includes('[WARNING]') ? 'text-amber-300' : 'text-gray-300'
+                    }`}
+                  >
+                    {logLine}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
+              {(() => {
+                const targetProfile = profiles.find(p => p.username === exportModalUser);
+                return targetProfile ? (
+                  <button
+                    onClick={() => downloadStudentMarkdown(targetProfile, responses)}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
+                  >
+                    <Download size={14} />
+                    Descargar Markdown Local
+                  </button>
+                ) : null;
+              })()}
+              <button
+                onClick={() => setExportModalUser(null)}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editingProfile && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
