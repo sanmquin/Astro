@@ -12,7 +12,7 @@ import astroCasaKarma from '../data/astro_casa_karma.json';
 import astroValores from '../data/astro_valores.json';
 import {
   Users, User, BookOpen, ChevronLeft, Loader2, CheckCircle2, Circle, UserPlus,
-  Save, RefreshCw, KeyRound, Download, FileText, ExternalLink, X, AlertTriangle, Terminal
+  Save, RefreshCw, KeyRound, Download, FileText, ExternalLink, X, AlertTriangle, Terminal, Trash2
 } from 'lucide-react';
 import { SIGNS, HOUSES } from '../utils/constants';
 import { downloadStudentMarkdown } from '../utils/exportMarkdown';
@@ -120,6 +120,28 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
       setExportResult({ error: `Error de red o conexión al servidor: ${errMsg}` });
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleDeleteUser = async (username: string) => {
+    if (!window.confirm(`¿Estás seguro de eliminar al usuario ${username}? Esta acción eliminará su perfil y sus respuestas de manera permanente.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/.netlify/functions/users?username=${encodeURIComponent(username)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Usuario ${username} eliminado exitosamente.`);
+        setProfiles(prev => prev.filter(p => p.username !== username));
+        setResponses(prev => prev.filter(r => r.userId !== username));
+      } else {
+        alert(data.error || 'Error al eliminar usuario');
+      }
+    } catch (err) {
+      console.error('Failed to delete user', err);
+      alert('Error de conexión al eliminar usuario');
     }
   };
 
@@ -540,6 +562,14 @@ export default function AdminInterface({ isRestricted = false }: AdminInterfaceP
                               >
                                 <Save size={16} />
                                 Editar
+                              </button>
+                              <button
+                                onClick={() => handleDeleteUser(profile.username)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
+                                title="Eliminar usuario"
+                              >
+                                <Trash2 size={16} />
+                                Eliminar
                               </button>
                               <button
                                 onClick={() => {
