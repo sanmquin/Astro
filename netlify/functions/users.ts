@@ -57,6 +57,48 @@ export const handler = async (event: { httpMethod: string; body: string; querySt
     }
   }
 
+  if (event.httpMethod === 'DELETE') {
+    const isDeleteAllowed =
+      process.env.ALLOW_USER_DELETE?.toLowerCase() === 'true' ||
+      process.env.ALLOW_DELETE_USER?.toLowerCase() === 'true';
+
+    if (!isDeleteAllowed) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'La eliminación de usuarios está deshabilitada por configuración.' }),
+      };
+    }
+
+    if (!username) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Username is required' }),
+      };
+    }
+
+    const deleteResult = await collection.deleteOne({ username });
+
+    if (deleteResult.deletedCount === 0) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: 'Usuario no encontrado' }),
+      };
+    }
+
+    // Clean up student response history
+    try {
+      const responsesCollection = db.collection('responses');
+      await responsesCollection.deleteMany({ userId: username });
+    } catch (err) {
+      console.error('Failed to delete responses for user', username, err);
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true, message: 'Usuario eliminado correctamente' }),
+    };
+  }
+
   if (event.httpMethod === 'POST') {
     const userData = JSON.parse(event.body || '{}');
 
